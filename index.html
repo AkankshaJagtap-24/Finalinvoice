@@ -10,6 +10,7 @@
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
+    <img src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/image-OifiM3QjvjOScNqwioq9tiUobDoi5F.png" style="display: none;" id="companyLogo" alt="ACCEX Logo">
     <div class="container-fluid">
         <div class="row">
             <div class="col-12">
@@ -280,7 +281,7 @@ Raigad, Maharashtra - 410206</textarea>
 
                             <!-- Action Buttons -->
                             <div class="action-buttons">
-                                <button type="button" class="btn btn-info me-2" onclick="generatePreview()">Generate Preview</button>
+                                <button type="button" class="btn btn-info me-2" onclick="generateInvoiceWindow()">Generate Invoice</button>
                                 <button type="button" class="btn btn-outline-secondary me-2">Save as Draft</button>
                                 <button type="submit" class="btn btn-primary">Save</button>
                             </div>
@@ -298,8 +299,8 @@ function togglePreview() {
     invoiceGen.togglePreview();
 }
 
-function generatePreview() {
-    invoiceGen.generatePreview();
+function generateInvoiceWindow() {
+    invoiceGen.generateInvoice();
 }
 </script>
 </body>

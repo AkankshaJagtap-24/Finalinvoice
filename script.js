@@ -64,7 +64,15 @@ class InvoiceGenerator {
   init() {
     this.setCurrentDate()
     this.bindEvents()
-    this.addInitialLineItem()
+
+    // Try to restore saved form data first
+    this.restoreFormData()
+
+    // If no saved data, add initial line item
+    if (document.querySelectorAll("#lineItemsBody tr").length === 0) {
+      this.addInitialLineItem()
+    }
+
     this.calculateTotals()
   }
 
@@ -263,9 +271,9 @@ class InvoiceGenerator {
     document.getElementById("totalAmountUSD").textContent = `$${totalUSD.toFixed(2)}`
   }
 
-  generatePreview() {
-    const previewSection = document.getElementById("invoicePreview")
-    const previewContent = document.getElementById("invoicePreviewContent")
+  generateInvoice() {
+    // Store current form data before generating invoice
+    this.saveFormData()
 
     // Collect form data
     const companyName = document.getElementById("companyName").value
@@ -279,183 +287,445 @@ class InvoiceGenerator {
 
     const invoiceNumber = document.getElementById("invoiceNumber").value
     const invoiceDate = document.getElementById("invoiceDate").value
-    const dueDate = document.getElementById("dueDate").value
 
     // Generate line items HTML
     let lineItemsHTML = ""
-    let subtotal = 0
+    let subtotalINR = 0
+    let subtotalUSD = 0
 
     document.querySelectorAll("#lineItemsBody tr").forEach((row, index) => {
       const description = row.querySelector(".item-name").value
       const qty = Number.parseFloat(row.querySelector(".item-quantity").value) || 0
       const rate = Number.parseFloat(row.querySelector(".item-rate").value) || 0
-      const uom = row.querySelector(".item-uom") ? row.querySelector(".item-uom").value : "SER"
-      const currency = row.querySelector(".item-currency") ? row.querySelector(".item-currency").value : "INR"
+      const uom = row.querySelector(".item-uom").value
+      const currency = row.querySelector(".item-currency").value
       const amount = qty * rate
       const fxRate = currency === "USD" ? this.exchangeRate : 1
       const amountINR = currency === "USD" ? amount * fxRate : amount
 
-      subtotal += amountINR
+      if (currency === "USD") {
+        subtotalUSD += amount
+      } else {
+        subtotalINR += amount
+      }
 
       lineItemsHTML += `
       <tr>
-        <td>${description}</td>
-        <td>${uom}</td>
-        <td style="text-align: center;">${qty}</td>
-        <td class="amount-col">${rate.toFixed(2)}</td>
-        <td style="text-align: center;">${currency}</td>
-        <td class="amount-col">${amount.toFixed(2)}</td>
-        <td style="text-align: center;">${fxRate.toFixed(2)}</td>
-        <td class="amount-col">${amountINR.toFixed(2)}</td>
+        <td style="border: 1px solid #000; padding: 4px; font-size: 10px;">${description}<br><small style="font-size: 8px;">SAC: 996729</small></td>
+        <td style="border: 1px solid #000; padding: 4px; text-align: center; font-size: 10px;">${uom}</td>
+        <td style="border: 1px solid #000; padding: 4px; text-align: center; font-size: 10px;">${qty}</td>
+        <td style="border: 1px solid #000; padding: 4px; text-align: right; font-size: 10px;">${rate.toFixed(2)}</td>
+        <td style="border: 1px solid #000; padding: 4px; text-align: center; font-size: 10px;">${currency}</td>
+        <td style="border: 1px solid #000; padding: 4px; text-align: right; font-size: 10px;">${amount.toFixed(2)}</td>
+        <td style="border: 1px solid #000; padding: 4px; text-align: center; font-size: 10px;">${fxRate.toFixed(2)}</td>
+        <td style="border: 1px solid #000; padding: 4px; text-align: right; font-size: 10px;">${amountINR.toFixed(2)}</td>
       </tr>
     `
     })
 
     // Calculate totals
-    const taxAmount = subtotal * 0.18 // 18% GST
-    const total = subtotal + taxAmount
+    const totalTaxableINR = subtotalINR + subtotalUSD * this.exchangeRate
+    const igstAmount = totalTaxableINR * 0.18
+    const finalTotal = totalTaxableINR + igstAmount
 
-    // Generate invoice HTML
+    // Create the invoice HTML
     const invoiceHTML = `
-    <div class="invoice-template">
-      <div class="invoice-header-section">
-        <div>
-          <div class="company-logo">ACCEX</div>
-          <div class="company-tagline">Supply Chain Solutions</div>
-        </div>
-        <div class="company-details">
-          <strong>${companyName}</strong><br>
-          PAN: ${companyPAN}<br>
-          GSTN: ${companyGSTIN}<br>
-          ${companyAddress.replace(/\n/g, "<br>")}<br>
-          State Code: ${stateCode}
-        </div>
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <title>Tax Invoice - ${invoiceNumber}</title>
+      <style>
+        body { font-family: Arial, sans-serif; font-size: 10px; margin: 20px; }
+        .invoice-container { max-width: 800px; margin: 0 auto; }
+        .header-section { border: 2px solid #000; padding: 10px; margin-bottom: 10px; }
+        .company-logo { float: left; width: 100px; }
+        .company-details { float: right; text-align: right; }
+        .clear { clear: both; }
+        .invoice-title { text-align: center; font-size: 16px; font-weight: bold; margin: 20px 0; }
+        .customer-section { border: 1px solid #000; padding: 10px; margin-bottom: 10px; }
+        .invoice-table { width: 100%; border-collapse: collapse; margin: 10px 0; }
+        .invoice-table th, .invoice-table td { border: 1px solid #000; padding: 4px; font-size: 10px; }
+        .invoice-table th { background: #f0f0f0; text-align: center; font-weight: bold; }
+        .totals-section { margin: 20px 0; }
+        .tax-table { width: 100%; border-collapse: collapse; margin: 10px 0; }
+        .tax-table th, .tax-table td { border: 1px solid #000; padding: 4px; font-size: 10px; text-align: center; }
+        .bank-section { border: 1px solid #000; padding: 10px; margin-top: 20px; }
+        .signature-section { text-align: right; margin-top: 30px; }
+        .footer-text { font-size: 8px; margin-top: 20px; }
+        .amount-words { font-size: 9px; margin: 10px 0; }
+        .back-button { 
+          background: #4285f4; 
+          color: white; 
+          border: none; 
+          padding: 10px 20px; 
+          border-radius: 4px; 
+          cursor: pointer; 
+          margin-bottom: 20px;
+          font-size: 12px;
+        }
+        .back-button:hover {
+          background: #3367d6;
+        }
+        .action-buttons {
+          text-align: center;
+          margin: 20px 0;
+          padding: 20px;
+          border-top: 2px solid #000;
+        }
+        .print-button {
+          background: #28a745;
+          color: white;
+          border: none;
+          padding: 10px 20px;
+          border-radius: 4px;
+          cursor: pointer;
+          margin: 0 10px;
+          font-size: 12px;
+        }
+        .print-button:hover {
+          background: #218838;
+        }
+      </style>
+    </head>
+    <body>
+      <div class="action-buttons">
+        <button class="back-button" onclick="goBackToForm()">← Back to Form</button>
+        <button class="print-button" onclick="window.print()">🖨️ Print Invoice</button>
       </div>
       
-      <div class="invoice-title">TAX INVOICE</div>
-      
-      <div class="invoice-info-section">
-        <div class="customer-details">
-          <h6>Customer Details:</h6>
-          <strong>${selectedCustomer ? selectedCustomer.name : "Select Customer"}</strong><br>
-          Address: ${selectedCustomer ? selectedCustomer.billTo.replace(/\n/g, "<br>") : ""}
-          <br><br>
-          GSTN: <strong>27AADCS1107J2K</strong>
+      <div class="invoice-container">
+        
+        <!-- Header Section -->
+        <div class="header-section">
+          <div class="company-logo">
+            <img src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/image-OifiM3QjvjOScNqwioq9tiUobDoi5F.png" alt="ACCEX Logo" style="width: 80px;">
+          </div>
+          <div class="company-details">
+            <strong>${companyName}</strong><br>
+            PAN: ${companyPAN}<br>
+            GSTN: ${companyGSTIN}<br>
+            CIN: U63030MH2017PTC295034<br>
+            DIPP Certificate No.: DIPP5303<br>
+            MSME Udyam Registration No.: UDYAM-MH-19-0041547
+          </div>
+          <div class="clear"></div>
         </div>
-        <div class="invoice-details">
-          <strong>Invoice No.:</strong> ${invoiceNumber}<br>
-          <strong>Invoice Date:</strong> ${new Date(invoiceDate).toLocaleDateString("en-IN")}<br>
-          <strong>PO Reference:</strong> Contract<br>
-          <strong>Place of Supply:</strong> <strong>Maharashtra</strong><br>
-          <strong>State Code:</strong> ${stateCode}<br>
-          <strong>Reverse Charge:</strong> No<br><br>
-          <strong>SLD Reference #:</strong> ACX-INV-2-J3
+
+        <!-- Invoice Title -->
+        <div class="invoice-title">TAX INVOICE</div>
+
+        <!-- Customer Details -->
+        <div class="customer-section">
+          <div style="float: left; width: 50%;">
+            <strong>Customer Details:</strong><br>
+            <strong>${selectedCustomer ? selectedCustomer.name : "SCHLUMBERGER ASIA SERVICES LIMITED"}</strong><br>
+            Address: P-21, TTC INDUSTRIAL AREA,<br>
+            THANE BELAPUR ROAD, MIDC MAHAPE,<br>
+            THANE, MAHARASHTRA - 400710 INDIA<br><br>
+            GSTN: <strong>27AADCS1107J2K</strong>
+          </div>
+          <div style="float: right; width: 45%; text-align: right;">
+            Invoice No.: <strong>${invoiceNumber}</strong><br>
+            Invoice Date: <strong>${new Date(invoiceDate).toLocaleDateString("en-GB")}</strong><br>
+            PO Reference: <strong>Contract</strong><br>
+            Place of Supply: <strong>Maharashtra</strong><br>
+            State Code: <strong>${stateCode}</strong><br>
+            Reverse Charge: <strong>No</strong><br><br>
+            SLD Reference #: <strong>ACX-INV-2-J3</strong>
+          </div>
+          <div class="clear"></div>
         </div>
-      </div>
-      
-      <table class="invoice-table">
-        <thead>
-          <tr>
-            <th>Description of Services</th>
-            <th>UOM</th>
-            <th>QUANTITY</th>
-            <th>RATE</th>
-            <th>CUR</th>
-            <th>AMOUNT</th>
-            <th>FX RATE</th>
-            <th>AMOUNT (₹)</th>
-          </tr>
-        </thead>
-        <tbody>
-          ${lineItemsHTML}
-          <tr style="border-top: 2px solid #333;">
-            <td colspan="7" style="text-align: right; font-weight: bold;">TOTAL</td>
-            <td class="amount-col" style="font-weight: bold;">₹${subtotal.toFixed(2)}</td>
-          </tr>
-        </tbody>
-      </table>
-      
-      <div class="totals-section-preview">
-        <div class="total-row">
-          <span>Taxable Value:</span>
-          <span>₹${subtotal.toFixed(2)}</span>
+
+        <!-- Line Items Table -->
+        <table class="invoice-table">
+          <thead>
+            <tr>
+              <th rowspan="2" style="width: 25%;">Description of Services</th>
+              <th rowspan="2" style="width: 8%;">UOM</th>
+              <th colspan="6" style="background: #e0e0e0;">QUANTITY, RATE, AMOUNT & TAX</th>
+            </tr>
+            <tr>
+              <th style="width: 8%;">Qty</th>
+              <th style="width: 12%;">Rate</th>
+              <th style="width: 8%;">Currency</th>
+              <th style="width: 12%;">Amount</th>
+              <th style="width: 8%;">FX Rate</th>
+              <th style="width: 12%;">Amount (₹)</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${lineItemsHTML}
+          </tbody>
+        </table>
+
+        <!-- Tax Summary -->
+        <div style="margin: 20px 0;">
+          <table class="tax-table" style="width: 100%;">
+            <thead>
+              <tr>
+                <th>Taxable Value (₹)</th>
+                <th>IGST @ 18%</th>
+                <th>Total Tax (₹)</th>
+                <th>Total Amount (₹)</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>${totalTaxableINR.toFixed(2)}</td>
+                <td>${igstAmount.toFixed(2)}</td>
+                <td>${igstAmount.toFixed(2)}</td>
+                <td><strong>${finalTotal.toFixed(2)}</strong></td>
+              </tr>
+            </tbody>
+          </table>
         </div>
-        <div class="total-row">
-          <span>IGST @ 18.00%:</span>
-          <span>₹${taxAmount.toFixed(2)}</span>
+
+        <!-- Amount in Words -->
+        <div class="amount-words">
+          <strong>Amount in Words:</strong> ${this.numberToWords(finalTotal)} Rupees Only
         </div>
-        <div class="total-row final-total">
-          <span>Total Bill Value (INR):</span>
-          <span>₹${total.toFixed(2)}</span>
+
+        <!-- Bank Details -->
+        <div class="bank-section">
+          <strong>Bank Details:</strong><br>
+          Bank Name: HDFC Bank<br>
+          Account No.: 50200012345678<br>
+          IFSC Code: HDFC0001234<br>
+          Branch: Mumbai Main Branch
         </div>
-      </div>
-      
-      <div class="bank-details-section">
-        <div>
-          <h6>Our Bank Details for payment:</h6>
-          <strong>Bank:</strong> ICICI Bank<br>
-          <strong>Branch:</strong> Powai<br>
-          <strong>IFSC:</strong> ICIC0000020<br>
-          <strong>Account #:</strong> 002005035463
-        </div>
+
+        <!-- Signature -->
         <div class="signature-section">
+          <br><br>
           <strong>For ${companyName}</strong><br><br><br>
-          <strong>Authorised Signatory</strong>
+          Authorized Signatory
         </div>
+
+        <!-- Footer -->
+        <div class="footer-text" style="text-align: center; margin-top: 30px;">
+          This is a computer generated invoice and does not require physical signature.
+        </div>
+
       </div>
-      
-      <div class="footer-section">
-        <strong>Registered Office:</strong> 103, First Floor, Srishti Plaza, Saki Vihar Road, Powai, Mumbai – 400072<br>
-        <small>CIN AND WAREHOUSING PRIVATE LIMITED is registered under "STARTUP" by the Department of Industrial Policy and Promotion (DIPP) of the Government of India.</small>
-      </div>
-    </div>
+
+      <script>
+        function goBackToForm() {
+          // Reload the original page
+          window.location.reload();
+        }
+      </script>
+    </body>
+    </html>
   `
 
-    previewContent.innerHTML = invoiceHTML
-    previewSection.style.display = "block"
-    previewSection.scrollIntoView({ behavior: "smooth" })
+    // Navigate to invoice in same window
+    document.open()
+    document.write(invoiceHTML)
+    document.close()
+  }
+
+  // Add method to save form data
+  saveFormData() {
+    const formData = {
+      companyName: document.getElementById("companyName").value,
+      companyAddress: document.getElementById("companyAddress").value,
+      companyPAN: document.getElementById("companyPAN").value,
+      companyGSTIN: document.getElementById("companyGSTIN").value,
+      stateCode: document.getElementById("stateCode").value,
+      customerSelect: document.getElementById("customerSelect").value,
+      invoiceNumber: document.getElementById("invoiceNumber").value,
+      invoiceDate: document.getElementById("invoiceDate").value,
+      dueDate: document.getElementById("dueDate").value,
+      discountValue: document.getElementById("discountValue").value,
+      discountUnit: document.getElementById("discountUnit").value,
+      adjustment: document.getElementById("adjustment").value,
+      currency: document.getElementById("currency").value,
+      lineItems: [],
+    }
+
+    // Save line items
+    document.querySelectorAll("#lineItemsBody tr").forEach((row) => {
+      const lineItem = {
+        name: row.querySelector(".item-name").value,
+        uom: row.querySelector(".item-uom").value,
+        quantity: row.querySelector(".item-quantity").value,
+        rate: row.querySelector(".item-rate").value,
+        currency: row.querySelector(".item-currency").value,
+        tax: row.querySelector(".item-tax").value,
+      }
+      formData.lineItems.push(lineItem)
+    })
+
+    localStorage.setItem("invoiceFormData", JSON.stringify(formData))
+  }
+
+  // Add method to restore form data
+  restoreFormData() {
+    const savedData = localStorage.getItem("invoiceFormData")
+    if (savedData) {
+      const formData = JSON.parse(savedData)
+
+      // Restore basic form fields
+      document.getElementById("companyName").value = formData.companyName || ""
+      document.getElementById("companyAddress").value = formData.companyAddress || ""
+      document.getElementById("companyPAN").value = formData.companyPAN || ""
+      document.getElementById("companyGSTIN").value = formData.companyGSTIN || ""
+      document.getElementById("stateCode").value = formData.stateCode || ""
+      document.getElementById("customerSelect").value = formData.customerSelect || ""
+      document.getElementById("invoiceNumber").value = formData.invoiceNumber || ""
+      document.getElementById("invoiceDate").value = formData.invoiceDate || ""
+      document.getElementById("dueDate").value = formData.dueDate || ""
+      document.getElementById("discountValue").value = formData.discountValue || ""
+      document.getElementById("discountUnit").value = formData.discountUnit || ""
+      document.getElementById("adjustment").value = formData.adjustment || ""
+      document.getElementById("currency").value = formData.currency || ""
+
+      // Update customer info
+      this.updateCustomerInfo(formData.customerSelect)
+
+      // Clear existing line items
+      document.getElementById("lineItemsBody").innerHTML = ""
+
+      // Restore line items
+      if (formData.lineItems && formData.lineItems.length > 0) {
+        formData.lineItems.forEach((item) => {
+          this.addLineItemFromData(item)
+        })
+      } else {
+        this.addInitialLineItem()
+      }
+
+      this.calculateTotals()
+
+      // Clear saved data
+      localStorage.removeItem("invoiceFormData")
+    }
+  }
+
+  // Add method to create line item from saved data
+  addLineItemFromData(itemData) {
+    const tbody = document.getElementById("lineItemsBody")
+    const row = document.createElement("tr")
+
+    row.innerHTML = `
+      <td>
+          <input type="text" class="form-control item-name" value="${itemData.name || ""}" placeholder="Service description">
+          <small class="text-muted d-block">SAC: 996729</small>
+      </td>
+      <td>
+          <select class="form-select item-uom">
+              <option value="SER" ${itemData.uom === "SER" ? "selected" : ""}>SER</option>
+              <option value="VEH" ${itemData.uom === "VEH" ? "selected" : ""}>VEH</option>
+              <option value="TON" ${itemData.uom === "TON" ? "selected" : ""}>TON</option>
+              <option value="LCL" ${itemData.uom === "LCL" ? "selected" : ""}>LCL</option>
+              <option value="HST" ${itemData.uom === "HST" ? "selected" : ""}>HST</option>
+          </select>
+      </td>
+      <td>
+          <input type="number" class="form-control item-quantity" value="${itemData.quantity || 1}" min="0" step="0.01">
+      </td>
+      <td>
+          <input type="number" class="form-control item-rate" value="${itemData.rate || 0}" min="0" step="0.01">
+      </td>
+      <td>
+          <select class="form-select item-currency">
+              <option value="INR" ${itemData.currency === "INR" ? "selected" : ""}>INR</option>
+              <option value="USD" ${itemData.currency === "USD" ? "selected" : ""}>USD</option>
+          </select>
+      </td>
+      <td>
+          <span class="item-amount">0.00</span>
+      </td>
+      <td>
+          <span class="fx-rate">1.00</span>
+      </td>
+      <td>
+          <select class="form-select item-tax">
+              <option value="0" ${itemData.tax === "0" ? "selected" : ""}>0%</option>
+              <option value="5" ${itemData.tax === "5" ? "selected" : ""}>5%</option>
+              <option value="12" ${itemData.tax === "12" ? "selected" : ""}>12%</option>
+              <option value="18" ${itemData.tax === "18" ? "selected" : ""}>18%</option>
+              <option value="28" ${itemData.tax === "28" ? "selected" : ""}>28%</option>
+          </select>
+      </td>
+      <td>
+          <span class="item-amount-inr">₹0.00</span>
+      </td>
+      <td>
+          <button type="button" class="remove-item-btn" onclick="this.closest('tr').remove(); invoiceGen.calculateTotals();">
+              <i class="bi bi-x"></i>
+          </button>
+      </td>
+  `
+
+    tbody.appendChild(row)
+
+    // Bind events for the new row
+    const inputs = row.querySelectorAll(".item-quantity, .item-rate, .item-currency, .item-tax")
+    inputs.forEach((input) => {
+      input.addEventListener("input", () => {
+        this.calculateLineAmount(row)
+        this.calculateTotals()
+      })
+      input.addEventListener("change", () => {
+        this.calculateLineAmount(row)
+        this.calculateTotals()
+      })
+    })
+
+    this.calculateLineAmount(row)
+  }
+
+  numberToWords(num) {
+    // Simple number to words conversion for demo
+    const ones = ["", "One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight", "Nine"]
+    const teens = [
+      "Ten",
+      "Eleven",
+      "Twelve",
+      "Thirteen",
+      "Fourteen",
+      "Fifteen",
+      "Sixteen",
+      "Seventeen",
+      "Eighteen",
+      "Nineteen",
+    ]
+    const tens = ["", "", "Twenty", "Thirty", "Forty", "Fifty", "Sixty", "Seventy", "Eighty", "Ninety"]
+
+    if (num === 0) return "Zero"
+
+    const integerPart = Math.floor(num)
+
+    if (integerPart < 10) return ones[integerPart]
+    if (integerPart < 20) return teens[integerPart - 10]
+    if (integerPart < 100)
+      return tens[Math.floor(integerPart / 10)] + (integerPart % 10 ? " " + ones[integerPart % 10] : "")
+    if (integerPart < 1000)
+      return (
+        ones[Math.floor(integerPart / 100)] +
+        " Hundred" +
+        (integerPart % 100 ? " " + this.numberToWords(integerPart % 100) : "")
+      )
+
+    return "Amount exceeds conversion limit"
   }
 
   togglePreview() {
-    const previewSection = document.getElementById("invoicePreview")
-    previewSection.style.display = previewSection.style.display === "none" ? "block" : "none"
+    const preview = document.getElementById("invoicePreview")
+    if (preview.style.display === "none") {
+      preview.style.display = "block"
+      this.updatePreview()
+    } else {
+      preview.style.display = "none"
+    }
+  }
+
+  updatePreview() {
+    // Implementation for preview update
+    console.log("Preview updated")
   }
 }
 
 // Initialize the invoice generator
 const invoiceGen = new InvoiceGenerator()
-
-// Form submission handler
-document.getElementById("invoiceForm").addEventListener("submit", (e) => {
-  e.preventDefault()
-
-  // Collect form data
-  const formData = {
-    customer: document.getElementById("customerSelect").value,
-    invoiceNumber: document.getElementById("invoiceNumber").value,
-    invoiceDate: document.getElementById("invoiceDate").value,
-    dueDate: document.getElementById("dueDate").value,
-    currency: document.getElementById("currency").value,
-    lineItems: [],
-    totals: {
-      subtotal: document.getElementById("subTotal").textContent,
-      total: document.getElementById("totalAmount").textContent,
-    },
-  }
-
-  // Collect line items
-  document.querySelectorAll("#lineItemsBody tr").forEach((row) => {
-    formData.lineItems.push({
-      name: row.querySelector(".item-name").value,
-      description: row.querySelector(".item-description").value,
-      quantity: row.querySelector(".item-quantity").value,
-      rate: row.querySelector(".item-rate").value,
-      tax: row.querySelector(".item-tax").value,
-      amount: row.querySelector(".item-amount").textContent,
-    })
-  })
-
-  // Show success message
-  alert("Invoice saved successfully!\n\nInvoice Number: " + formData.invoiceNumber)
-  console.log("Invoice Data:", formData)
-})
