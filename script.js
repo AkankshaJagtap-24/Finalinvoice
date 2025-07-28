@@ -38,7 +38,7 @@ class InvoiceGenerator {
         taxRate: 18,
         hsn: "996729",
       },
-      transportation: {
+      "transportation": {
         name: "Inbound Transportation",
         description: "Gram Weight",
         uom: "TON",
@@ -106,6 +106,26 @@ class InvoiceGenerator {
 
     // Currency change
     document.getElementById("currency").addEventListener("change", () => this.calculateTotals())
+
+    // SAC, ASC, BOE input updates
+    const sacInput = document.getElementById("sacInput")
+    const ascInput = document.getElementById("ascInput")
+    const boeInput = document.getElementById("boeInput")
+    if (sacInput && document.getElementById("sacValue")) {
+      sacInput.addEventListener("input", (e) => {
+        document.getElementById("sacValue").textContent = e.target.value
+      })
+    }
+    if (ascInput && document.getElementById("ascValue")) {
+      ascInput.addEventListener("input", (e) => {
+        document.getElementById("ascValue").textContent = e.target.value
+      })
+    }
+    if (boeInput && document.getElementById("boeValue")) {
+      boeInput.addEventListener("input", (e) => {
+        document.getElementById("boeValue").textContent = e.target.value
+      })
+    }
   }
 
   updateCustomerInfo(customerId) {
@@ -133,8 +153,7 @@ class InvoiceGenerator {
 
     row.innerHTML = `
         <td>
-            <input type="text" class="form-control item-name" value="${item ? item.name : ""}" placeholder="Service description">
-            <small class="text-muted d-block">${item ? item.description : ""}</small>
+            <input type="text" class="form-control item-name" value="${item ? item.name : ""}" placeholder="Service description"> 
         </td>
         <td>
             <select class="form-select item-uom">
@@ -161,7 +180,7 @@ class InvoiceGenerator {
             <span class="item-amount">0.00</span>
         </td>
         <td>
-            <span class="fx-rate">1.00</span>
+            <input type="number" class="form-control fx-rate" value="${item && item.currency === "USD" ? this.exchangeRate : 1}" min="0" step="0.01">
         </td>
         <td>
             <select class="form-select item-tax">
@@ -185,7 +204,7 @@ class InvoiceGenerator {
     tbody.appendChild(row)
 
     // Bind events for the new row
-    const inputs = row.querySelectorAll(".item-quantity, .item-rate, .item-currency, .item-tax")
+    const inputs = row.querySelectorAll(".item-quantity, .item-rate, .item-currency, .item-tax, .fx-rate")
     inputs.forEach((input) => {
       input.addEventListener("input", () => {
         this.calculateLineAmount(row)
@@ -206,44 +225,46 @@ class InvoiceGenerator {
     const rate = Number.parseFloat(row.querySelector(".item-rate").value) || 0
     const taxRate = Number.parseFloat(row.querySelector(".item-tax").value) || 0
     const currency = row.querySelector(".item-currency").value
+    const fxRate = Number.parseFloat(row.querySelector(".fx-rate").value) || 1
 
     const subtotal = quantity * rate
     const taxAmount = subtotal * (taxRate / 100)
     const total = subtotal + taxAmount
 
-    // Calculate FX rate and INR amount
-    const fxRate = currency === "USD" ? this.exchangeRate : 1
+    // Calculate INR amount
     const totalINR = currency === "USD" ? total * fxRate : total
 
     // Update display
     const currencySymbol = currency === "USD" ? "$" : "₹"
 
     row.querySelector(".item-amount").textContent = `${currencySymbol}${total.toFixed(2)}`
-    row.querySelector(".fx-rate").textContent = fxRate.toFixed(2)
     row.querySelector(".item-amount-inr").textContent = `₹${totalINR.toFixed(2)}`
   }
 
   calculateTotals() {
-    const rows = document.querySelectorAll("#lineItemsBody tr")
-    let subtotal = 0
+    const rows = document.querySelectorAll("#lineItemsBody tr");
+    let subtotal = 0;
 
     // Calculate subtotal in INR
     rows.forEach((row) => {
-      const quantity = Number.parseFloat(row.querySelector(".item-quantity").value) || 0
-      const rate = Number.parseFloat(row.querySelector(".item-rate").value) || 0
-      const taxRate = Number.parseFloat(row.querySelector(".item-tax").value) || 0
-      const currency = row.querySelector(".item-currency").value
+      const quantityInput = row.querySelector(".item-quantity");
+      if (!quantityInput) return; // Skip rows without item-quantity
 
-      const lineSubtotal = quantity * rate
-      const taxAmount = lineSubtotal * (taxRate / 100)
-      const lineTotal = lineSubtotal + taxAmount
+      const quantity = Number.parseFloat(quantityInput.value) || 0;
+      const rate = Number.parseFloat(row.querySelector(".item-rate").value) || 0;
+      const taxRate = Number.parseFloat(row.querySelector(".item-tax").value) || 0;
+      const currency = row.querySelector(".item-currency").value;
+      const fxRate = Number.parseFloat(row.querySelector(".fx-rate").value) || 1;
+
+      const lineSubtotal = quantity * rate;
+      const taxAmount = lineSubtotal * (taxRate / 100);
+      const lineTotal = lineSubtotal + taxAmount;
 
       // Convert to INR if needed
-      const fxRate = currency === "USD" ? this.exchangeRate : 1
-      const lineTotalINR = currency === "USD" ? lineTotal * fxRate : lineTotal
+      const lineTotalINR = currency === "USD" ? lineTotal * fxRate : lineTotal;
 
-      subtotal += lineTotalINR
-    })
+      subtotal += lineTotalINR;
+    });
 
     // Apply discount
     const discountValue = Number.parseFloat(document.getElementById("discountValue").value) || 0
@@ -294,7 +315,10 @@ class InvoiceGenerator {
     let subtotalUSD = 0
 
     document.querySelectorAll("#lineItemsBody tr").forEach((row, index) => {
-      const description = row.querySelector(".item-name").value
+      const nameInput = row.querySelector(".item-name");
+      if (!nameInput) return; // Only process product rows
+
+      const description = nameInput.value
       const qty = Number.parseFloat(row.querySelector(".item-quantity").value) || 0
       const rate = Number.parseFloat(row.querySelector(".item-rate").value) || 0
       const uom = row.querySelector(".item-uom").value
@@ -311,7 +335,7 @@ class InvoiceGenerator {
 
       lineItemsHTML += `
       <tr>
-        <td style="border: 1px solid #000; padding: 4px; font-size: 10px;">${description}<br><small style="font-size: 8px;">SAC: 996729</small></td>
+        <td style="border: 1px solid #000; padding: 4px; font-size: 10px;">${description} </td>
         <td style="border: 1px solid #000; padding: 4px; text-align: center; font-size: 10px;">${uom}</td>
         <td style="border: 1px solid #000; padding: 4px; text-align: center; font-size: 10px;">${qty}</td>
         <td style="border: 1px solid #000; padding: 4px; text-align: right; font-size: 10px;">${rate.toFixed(2)}</td>
@@ -545,13 +569,17 @@ class InvoiceGenerator {
 
     // Save line items
     document.querySelectorAll("#lineItemsBody tr").forEach((row) => {
+      const nameInput = row.querySelector(".item-name");
+      if (!nameInput) return; // Only process product rows
+
       const lineItem = {
-        name: row.querySelector(".item-name").value,
+        name: nameInput.value,
         uom: row.querySelector(".item-uom").value,
         quantity: row.querySelector(".item-quantity").value,
         rate: row.querySelector(".item-rate").value,
         currency: row.querySelector(".item-currency").value,
         tax: row.querySelector(".item-tax").value,
+        fxRate: row.querySelector(".fx-rate").value,
       }
       formData.lineItems.push(lineItem)
     })
@@ -610,7 +638,7 @@ class InvoiceGenerator {
     row.innerHTML = `
       <td>
           <input type="text" class="form-control item-name" value="${itemData.name || ""}" placeholder="Service description">
-          <small class="text-muted d-block">SAC: 996729</small>
+        
       </td>
       <td>
           <select class="form-select item-uom">
@@ -637,7 +665,7 @@ class InvoiceGenerator {
           <span class="item-amount">0.00</span>
       </td>
       <td>
-          <span class="fx-rate">1.00</span>
+          <input type="number" class="form-control fx-rate" value="${itemData.fxRate || 1}" min="0" step="0.01">
       </td>
       <td>
           <select class="form-select item-tax">
@@ -661,7 +689,7 @@ class InvoiceGenerator {
     tbody.appendChild(row)
 
     // Bind events for the new row
-    const inputs = row.querySelectorAll(".item-quantity, .item-rate, .item-currency, .item-tax")
+    const inputs = row.querySelectorAll(".item-quantity, .item-rate, .item-currency, .item-tax, .fx-rate")
     inputs.forEach((input) => {
       input.addEventListener("input", () => {
         this.calculateLineAmount(row)
