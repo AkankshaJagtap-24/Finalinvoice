@@ -484,21 +484,79 @@ class InvoiceGenerator {
 
         <!-- Tax Summary -->
         <div style="margin: 20px 0;">
+          <div style="text-align: center; font-weight: bold; margin-bottom: 10px;">
+            Total Bill Value (USD): $${(finalTotal / this.exchangeRate).toFixed(2)}
+          </div>
+          <div style="margin-bottom: 10px;"><strong>Summary:</strong></div>
           <table class="tax-table" style="width: 100%;">
             <thead>
               <tr>
-                <th>Taxable Value (₹)</th>
-                <th>IGST @ 18%</th>
-                <th>Total Tax (₹)</th>
-                <th>Total Amount (₹)</th>
+                <th>FX Rate</th>
+                <th>HSN / SAC</th>
+                <th>IGST %</th>
+                <th>Taxable ($)</th>
+                <th>Taxable (₹)</th>
+                <th>IGST ($)</th>
+                <th>IGST (₹)</th>
+                <th>Total ($)</th>
+                <th>Total (₹)</th>
               </tr>
             </thead>
             <tbody>
               <tr>
-                <td>${totalTaxableINR.toFixed(2)}</td>
-                <td>${igstAmount.toFixed(2)}</td>
-                <td>${igstAmount.toFixed(2)}</td>
-                <td><strong>${finalTotal.toFixed(2)}</strong></td>
+                <td>${this.exchangeRate.toFixed(2)}</td>
+                <td>996729</td>
+                <td>18.00%</td>
+                <td>${subtotalUSD.toFixed(2)}</td>
+                <td>${subtotalINR.toFixed(2)}</td>
+                <td>${(subtotalUSD * 0.18).toFixed(2)}</td>
+                <td>${(subtotalINR * 0.18).toFixed(2)}</td>
+                <td>${(subtotalUSD * 1.18).toFixed(2)}</td>
+                <td>${(subtotalINR * 1.18).toFixed(2)}</td>
+              </tr>
+              <tr>
+                <td>-</td>
+                <td>-</td>
+                <td>-</td>
+                <td>-</td>
+                <td>-</td>
+                <td>-</td>
+                <td>-</td>
+                <td>-</td>
+                <td>-</td>
+              </tr>
+              <tr>
+                <td>-</td>
+                <td>-</td>
+                <td>-</td>
+                <td>-</td>
+                <td>-</td>
+                <td>-</td>
+                <td>-</td>
+                <td>-</td>
+                <td>-</td>
+              </tr>
+              <tr>
+                <td>-</td>
+                <td>-</td>
+                <td>-</td>
+                <td>-</td>
+                <td>-</td>
+                <td>-</td>
+                <td>-</td>
+                <td>-</td>
+                <td>-</td>
+              </tr>
+              <tr style="font-weight: bold;">
+                <td>TOTAL</td>
+                <td>-</td>
+                <td>-</td>
+                <td>${subtotalUSD.toFixed(2)}</td>
+                <td>${subtotalINR.toFixed(2)}</td>
+                <td>${(subtotalUSD * 0.18).toFixed(2)}</td>
+                <td>${(subtotalINR * 0.18).toFixed(2)}</td>
+                <td>${(subtotalUSD * 1.18).toFixed(2)}</td>
+                <td>${(subtotalINR * 1.18).toFixed(2)}</td>
               </tr>
             </tbody>
           </table>
