@@ -566,6 +566,12 @@ async function showInvoiceModal(invoiceId) {
             const data = await response.json();
             displayInvoiceModal(data);
             invoiceModal.classList.add('show');
+            
+            // Setup download PDF button for finalized invoices
+            const downloadPdfBtn = document.querySelector('.btn-success[onclick="downloadInvoicePDF(' + invoiceId + ')"]');
+            if (downloadPdfBtn && data.invoice.status === 'finalized') {
+                downloadPdfBtn.style.display = 'inline-block';
+            }
         } else {
             showToast('Failed to load invoice details', 'error');
         }

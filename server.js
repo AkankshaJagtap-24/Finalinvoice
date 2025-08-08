@@ -360,7 +360,7 @@ app.post('/api/shipments', requireAuth, (req, res) => {
             total_amount_inr, fx_rate, status
         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, [
             invoiceNo, this.lastID, invoiceDate, 'Maharashtra',
-            '', 'Maharashtra', '27', baseAmountUSD, baseAmountINR, fxRate, 'draft'
+            '', 'Maharashtra', '27', grandTotalUSD, grandTotalINR, fxRate, 'draft'
         ], function(err) {
             if (err) {
                 return res.status(500).json({ error: 'Invoice creation failed' });
@@ -384,10 +384,30 @@ app.post('/api/shipments', requireAuth, (req, res) => {
                     return res.status(500).json({ error: 'Invoice item creation failed' });
                 }
                 
+                const invoiceId = this.lastID;
+                
+                // Insert invoice items into the database
+                const insertItemStmt = db.prepare(`INSERT INTO invoice_items (
+                    invoice_id, description, uom, quantity, rate, currency, 
+                    amount, fx_rate, amount_usd, hsn_sac, igst_percent, 
+                    taxable_amount_usd, taxable_amount_inr, igst_usd, igst_inr
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`);
+                
+                invoiceItems.forEach(item => {
+                    insertItemStmt.run([
+                        invoiceId, item.description, item.uom, item.quantity, item.rate, 
+                        item.currency, item.amount, item.fx_rate, item.amount_usd, 
+                        item.hsn_sac, item.igst_percent, item.taxable_amount_usd, 
+                        item.taxable_amount_inr, item.igst_usd, item.igst_inr
+                    ]);
+                });
+                
+                insertItemStmt.finalize();
+                
                 res.json({ 
                     success: true, 
                     shipmentId: this.lastID,
-                    invoiceId: this.lastID,
+                    invoiceId: invoiceId,
                     message: 'Shipment created and draft invoice generated'
                 });
             });
