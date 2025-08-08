@@ -64,40 +64,91 @@ function initializeApp() {
 
 function setupEventListeners() {
     // Login form
-    loginForm.addEventListener('submit', handleLogin);
+    if (loginForm) {
+        loginForm.addEventListener('submit', handleLogin);
+    }
     
     // Signup form
-    signupForm.addEventListener('submit', handleSignup);
+    if (signupForm) {
+        signupForm.addEventListener('submit', handleSignup);
+    }
+    
+    // Signup and Login buttons
+    const signupButtons = document.querySelectorAll('.signup-btn');
+    signupButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            if (loginForm.classList.contains('hidden')) {
+                showLoginForm();
+            } else {
+                showSignupForm();
+            }
+        });
+    });
     
     // Logout
-    logoutBtn.addEventListener('click', handleLogout);
+    if (logoutBtn) {
+        logoutBtn.addEventListener('click', handleLogout);
+    }
     
     // Navigation
     navItems.forEach(item => {
         item.addEventListener('click', handleNavigation);
     });
     
+    // Sidebar toggle for mobile
+    const sidebarToggle = document.querySelector('.sidebar-toggle');
+    if (sidebarToggle) {
+        sidebarToggle.addEventListener('click', function() {
+            document.querySelector('.sidebar').classList.toggle('expanded');
+        });
+    }
+    
     // Shipment form
-    shipmentForm.addEventListener('submit', handleShipmentSubmit);
+    if (shipmentForm) {
+        shipmentForm.addEventListener('submit', handleShipmentSubmit);
+    }
     
     // Shipment type change
-    shipmentType.addEventListener('change', handleShipmentTypeChange);
+    if (shipmentType) {
+        shipmentType.addEventListener('change', handleShipmentTypeChange);
+    }
+    
+    // ODC field change
+    const odcField = document.getElementById('odc');
+    if (odcField) {
+        odcField.addEventListener('change', function() {
+            const dimensionFields = document.querySelectorAll('.dimension-field');
+            if (this.value === 'No') {
+                dimensionFields.forEach(field => field.classList.add('hidden'));
+            } else {
+                dimensionFields.forEach(field => field.classList.remove('hidden'));
+            }
+        });
+    }
     
     // Customer selection
-    customerSelect.addEventListener('change', handleCustomerChange);
+    if (customerSelect) {
+        customerSelect.addEventListener('change', handleCustomerChange);
+    }
     
     // Invoice filter
-    invoiceFilter.addEventListener('change', handleInvoiceFilter);
+    if (invoiceFilter) {
+        invoiceFilter.addEventListener('change', handleInvoiceFilter);
+    }
     
     // Modal close
-    closeInvoiceModal.addEventListener('click', closeModal);
+    if (closeInvoiceModal) {
+        closeInvoiceModal.addEventListener('click', closeModal);
+    }
     
     // Close modal on outside click
-    invoiceModal.addEventListener('click', function(e) {
-        if (e.target === invoiceModal) {
-            closeModal();
-        }
-    });
+    if (invoiceModal) {
+        invoiceModal.addEventListener('click', function(e) {
+            if (e.target === invoiceModal) {
+                closeModal();
+            }
+        });
+    }
 }
 
 // Authentication functions
@@ -113,6 +164,7 @@ async function checkAuthStatus() {
             currentUser = data.user;
             showDashboard();
         } else {
+            // This is expected behavior when user is not logged in (401)
             showLoginPage();
         }
     } catch (error) {
@@ -136,6 +188,7 @@ async function handleLogin(e) {
             headers: {
                 'Content-Type': 'application/json'
             },
+            credentials: 'include',
             body: JSON.stringify({ email, password })
         });
         
@@ -186,6 +239,7 @@ async function handleSignup(e) {
             headers: {
                 'Content-Type': 'application/json'
             },
+            credentials: 'include',
             body: JSON.stringify({ name, email, password })
         });
         
@@ -219,7 +273,10 @@ function showLoginForm() {
 
 async function handleLogout() {
     try {
-        await fetch('/api/logout', { method: 'POST' });
+        await fetch('/api/logout', { 
+            method: 'POST',
+            credentials: 'include'
+        });
         currentUser = null;
         showLoginPage();
         showToast('Logged out successfully', 'info');
@@ -254,7 +311,7 @@ function showDashboardPage() {
     hideAllPages();
     dashboardPage.classList.remove('hidden');
     pageTitle.textContent = 'Dashboard';
-    // No need to load dashboard data for the simplified dashboard
+    loadDashboardData();
 }
 
 function showAddShipmentPage() {
@@ -280,7 +337,7 @@ function hideAllPages() {
 function showDashboard() {
     loginPage.classList.add('hidden');
     dashboard.classList.remove('hidden');
-    userName.textContent = currentUser.name;
+    userName.textContent = currentUser ? currentUser.name : 'User';
     showDashboardPage();
 }
 
@@ -316,16 +373,6 @@ function handleShipmentTypeChange() {
             `;
         }
     }
-    
-    // Handle ODC field change
-    document.getElementById('odc').addEventListener('change', function() {
-        const dimensionFields = document.querySelectorAll('.dimension-field');
-        if (this.value === 'No') {
-            dimensionFields.forEach(field => field.classList.add('hidden'));
-        } else {
-            dimensionFields.forEach(field => field.classList.remove('hidden'));
-        }
-    });
 }
 
 async function loadCustomers() {
@@ -355,6 +402,8 @@ function populateCustomerSelect() {
 function setupGstinSearch() {
     const gstinSearch = document.getElementById('gstinSearch');
     const gstinSearchResults = document.getElementById('gstinSearchResults');
+    
+    if (!gstinSearch || !gstinSearchResults) return;
     
     gstinSearch.addEventListener('input', function() {
         const searchTerm = this.value.toLowerCase();
@@ -403,6 +452,9 @@ function selectCustomerFromSearch(customer) {
     // Update customer select dropdown
     customerSelect.value = customer.id;
     
+    // Show customer details section
+    customerDetails.classList.remove('hidden');
+    
     // Update customer details fields
     customerGstin.value = customer.gstin || '';
     customerBoe.value = customer.boe || '';
@@ -411,16 +463,25 @@ function selectCustomerFromSearch(customer) {
 
 function handleCustomerChange() {
     const customerId = customerSelect.value;
-    const customer = customers.find(c => c.id == customerId);
     
-    if (customer) {
-        customerGstin.value = customer.gstin || '';
-        customerBoe.value = customer.boe || '';
-        customerNewTon.value = customer.new_ton || '';
+    if (customerId) {
+        // Show customer details section
+        customerDetails.classList.remove('hidden');
+        
+        const customer = customers.find(c => c.id == customerId);
+        
+        if (customer) {
+            customerGstin.value = customer.gstin || '';
+            customerBoe.value = customer.boe || '';
+            customerNewTon.value = customer.new_ton || '';
+        } else {
+            customerGstin.value = '';
+            customerBoe.value = '';
+            customerNewTon.value = '';
+        }
     } else {
-        customerGstin.value = '';
-        customerBoe.value = '';
-        customerNewTon.value = '';
+        // Hide customer details section
+        customerDetails.classList.add('hidden');
     }
 }
 
@@ -461,6 +522,9 @@ async function handleShipmentSubmit(e) {
             shipmentForm.reset();
             customerDetails.classList.add('hidden');
             handleShipmentTypeChange();
+            
+            // Add to recent activity
+            addRecentActivity('created', `New shipment created: ${shipmentData.shipment_type} - ${shipmentData.shipment_subtype}`);
             
             // Show the generated invoice
             if (data.invoiceId) {
@@ -513,7 +577,7 @@ function displayInvoices() {
         <div class="invoice-card">
             <div class="invoice-header">
                 <div class="invoice-number">${invoice.invoice_no}</div>
-                <div class="invoice-date">${invoice.invoice_date}</div>
+                <div class="invoice-status ${invoice.status}">${invoice.status}</div>
             </div>
             <div class="invoice-body">
                 <div class="invoice-details">
@@ -522,28 +586,24 @@ function displayInvoices() {
                         <span>${invoice.company_name || 'N/A'}</span>
                     </div>
                     <div class="invoice-detail">
-                        <label>Status</label>
-                        <span>${invoice.status}</span>
+                        <label>Date</label>
+                        <span>${invoice.invoice_date}</span>
                     </div>
                     <div class="invoice-detail">
                         <label>FX Rate</label>
                         <span>${invoice.fx_rate}</span>
                     </div>
-                    <div class="invoice-detail">
-                        <label>Place of Supply</label>
-                        <span>${invoice.place_of_supply}</span>
-                    </div>
                 </div>
                 <div class="invoice-amount">
-                    <div class="amount-label">Total Amount (USD)</div>
+                    <div class="amount-label">Total Amount</div>
                     <div class="amount-value">$${parseFloat(invoice.total_amount_usd).toFixed(2)}</div>
                 </div>
                 <div class="invoice-actions">
-                    <button class="btn btn-sm btn-info" onclick="showInvoiceModal(${invoice.id})">
+                    <button class="btn btn-primary" onclick="showInvoiceModal(${invoice.id})">
                         <i class="fas fa-eye"></i> View
                     </button>
                     ${invoice.status === 'draft' ? `
-                        <button class="btn btn-sm btn-success" onclick="finalizeInvoice(${invoice.id})">
+                        <button class="btn btn-success" onclick="finalizeInvoice(${invoice.id})">
                             <i class="fas fa-check"></i> Finalize
                         </button>
                     ` : ''}
@@ -566,12 +626,6 @@ async function showInvoiceModal(invoiceId) {
             const data = await response.json();
             displayInvoiceModal(data);
             invoiceModal.classList.add('show');
-            
-            // Setup download PDF button for finalized invoices
-            const downloadPdfBtn = document.querySelector('.btn-success[onclick="downloadInvoicePDF(' + invoiceId + ')"]');
-            if (downloadPdfBtn && data.invoice.status === 'finalized') {
-                downloadPdfBtn.style.display = 'inline-block';
-            }
         } else {
             showToast('Failed to load invoice details', 'error');
         }
@@ -587,180 +641,182 @@ function displayInvoiceModal(data) {
     const { invoice, items } = data;
     
     invoiceModalBody.innerHTML = `
-        <div class="invoice-print">
-            <!-- Company Header -->
-            <div class="invoice-header-print">
-                <div class="company-name">ACCEX SUPPLY CHAIN PRIVATE LIMITED</div>
-                <div class="company-address">181/3, Taluka Panvel, Sai Village, igad, Maharashtra - 410206</div>
-                <div class="company-address">Website: www.accexscs.com</div>
-                <div class="invoice-title">TAX INVOICE</div>
-            </div>
+        <div class="invoice-container">
+            <div class="invoice-print">
+                <!-- Company Header -->
+                <div class="invoice-header-print">
+                    <div class="company-name">ACCEX SUPPLY CHAIN PRIVATE LIMITED</div>
+                    <div class="company-address">181/3, Taluka Panvel, Sai Village, igad, Maharashtra - 410206</div>
+                    <div class="company-address">Website: www.accexscs.com</div>
+                    <div class="invoice-title">TAX INVOICE</div>
+                </div>
             
-            <!-- Invoice Details -->
-            <div class="invoice-details-print">
-                <div class="invoice-info">
-                    <div class="invoice-info-row">
-                        <span class="invoice-info-label">Invoice No.:</span>
-                        <span>${invoice.invoice_no}</span>
+                <!-- Invoice Details -->
+                <div class="invoice-details-print">
+                    <div class="invoice-info">
+                        <div class="invoice-info-row">
+                            <span class="invoice-info-label">Invoice No.:</span>
+                            <span>${invoice.invoice_no}</span>
+                        </div>
+                        <div class="invoice-info-row">
+                            <span class="invoice-info-label">Invoice Date:</span>
+                            <span>${invoice.invoice_date}</span>
+                        </div>
+                        <div class="invoice-info-row">
+                            <span class="invoice-info-label">Place of Supply:</span>
+                            <span>${invoice.place_of_supply}</span>
+                        </div>
                     </div>
-                    <div class="invoice-info-row">
-                        <span class="invoice-info-label">Invoice Date:</span>
-                        <span>${invoice.invoice_date}</span>
-                    </div>
-                    <div class="invoice-info-row">
-                        <span class="invoice-info-label">Place of Supply:</span>
-                        <span>${invoice.place_of_supply}</span>
+                    <div class="invoice-info">
+                        <div class="invoice-info-row">
+                            <span class="invoice-info-label">GSTIN of Recipient:</span>
+                            <span>${invoice.gstin_recipient || 'N/A'}</span>
+                        </div>
+                        <div class="invoice-info-row">
+                            <span class="invoice-info-label">State:</span>
+                            <span>${invoice.state}</span>
+                        </div>
+                        <div class="invoice-info-row">
+                            <span class="invoice-info-label">State Code:</span>
+                            <span>${invoice.state_code}</span>
+                        </div>
                     </div>
                 </div>
-                <div class="invoice-info">
-                    <div class="invoice-info-row">
-                        <span class="invoice-info-label">GSTIN of Recipient:</span>
-                        <span>${invoice.gstin_recipient || 'N/A'}</span>
-                    </div>
-                    <div class="invoice-info-row">
-                        <span class="invoice-info-label">State:</span>
-                        <span>${invoice.state}</span>
-                    </div>
-                    <div class="invoice-info-row">
-                        <span class="invoice-info-label">State Code:</span>
-                        <span>${invoice.state_code}</span>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Bill To Section -->
-            <div class="bill-to-section">
-                <h3>Bill To / Ship To</h3>
-                <div class="bill-to-content">
-                    <div class="bill-to-item">
-                        <strong>Bill To Party:</strong>
-                        <span>${invoice.company_name || 'N/A'}</span>
-                        <span>${invoice.contact_person || ''}</span>
-                        <span>${invoice.address || ''}</span>
-                        <span>GSTIN: ${invoice.gstin || 'N/A'}</span>
-                    </div>
-                    <div class="bill-to-item">
-                        <strong>Ship To Party:</strong>
-                        <span>${invoice.company_name || 'N/A'}</span>
-                        <span>${invoice.contact_person || ''}</span>
-                        <span>${invoice.address || ''}</span>
-                        <span>GSTIN: ${invoice.gstin || 'N/A'}</span>
+                
+                <!-- Bill To Section -->
+                <div class="bill-to-section">
+                    <h3>Bill To / Ship To</h3>
+                    <div class="bill-to-content">
+                        <div class="bill-to-item">
+                            <strong>Bill To Party:</strong>
+                            <span>${invoice.company_name || 'N/A'}</span>
+                            <span>${invoice.contact_person || ''}</span>
+                            <span>${invoice.address || ''}</span>
+                            <span>GSTIN: ${invoice.gstin || 'N/A'}</span>
+                        </div>
+                        <div class="bill-to-item">
+                            <strong>Ship To Party:</strong>
+                            <span>${invoice.company_name || 'N/A'}</span>
+                            <span>${invoice.contact_person || ''}</span>
+                            <span>${invoice.address || ''}</span>
+                            <span>GSTIN: ${invoice.gstin || 'N/A'}</span>
+                        </div>
                     </div>
                 </div>
-            </div>
-            
-            <!-- Service Details Table -->
-            <table class="invoice-table">
-                <thead>
-                    <tr>
-                        <th>Sl No</th>
-                        <th>Description of Service</th>
-                        <th>UOM</th>
-                        <th>Quantity</th>
-                        <th>Rate</th>
-                        <th>Currency</th>
-                        <th>Amount</th>
-                        <th>FX Rate</th>
-                        <th>Amount ($)</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    ${items.map((item, index) => `
+                
+                <!-- Service Details Table -->
+                <table class="invoice-table">
+                    <thead>
                         <tr>
-                            <td>${index + 1}</td>
-                            <td>${item.description}</td>
-                            <td>${item.uom}</td>
-                            <td>${item.quantity}</td>
-                            <td>${parseFloat(item.rate).toFixed(2)}</td>
-                            <td>${item.currency}</td>
-                            <td>${parseFloat(item.amount).toFixed(2)}</td>
-                            <td>${parseFloat(item.fx_rate).toFixed(2)}</td>
-                            <td>$${parseFloat(item.amount_usd).toFixed(2)}</td>
+                            <th>Sl No</th>
+                            <th>Description of Service</th>
+                            <th>UOM</th>
+                            <th>Quantity</th>
+                            <th>Rate</th>
+                            <th>Currency</th>
+                            <th>Amount</th>
+                            <th>FX Rate</th>
+                            <th>Amount ($)</th>
                         </tr>
-                    `).join('')}
-                </tbody>
-            </table>
-            
-            <!-- Tax Summary -->
-            <div class="invoice-summary">
-                <div class="tax-summary">
-                    <h3>Tax Summary</h3>
-                    <table class="tax-table">
-                        <thead>
+                    </thead>
+                    <tbody>
+                        ${items.map((item, index) => `
                             <tr>
-                                <th>FX Rate</th>
-                                <th>HSN/SAC</th>
-                                <th>IGST %</th>
-                                <th>Taxable ($)</th>
-                                <th>Taxable (₹)</th>
-                                <th>IGST ($)</th>
-                                <th>IGST (₹)</th>
-                                <th>Total (₹)</th>
+                                <td>${index + 1}</td>
+                                <td>${item.description}</td>
+                                <td>${item.uom}</td>
+                                <td>${item.quantity}</td>
+                                <td>${parseFloat(item.rate).toFixed(2)}</td>
+                                <td>${item.currency}</td>
+                                <td>${parseFloat(item.amount).toFixed(2)}</td>
+                                <td>${parseFloat(item.fx_rate).toFixed(2)}</td>
+                                <td>$${parseFloat(item.amount_usd).toFixed(2)}</td>
                             </tr>
-                        </thead>
-                        <tbody>
-                            ${items.map(item => `
+                        `).join('')}
+                    </tbody>
+                </table>
+                
+                <!-- Tax Summary -->
+                <div class="invoice-summary">
+                    <div class="tax-summary">
+                        <h3>Tax Summary</h3>
+                        <table class="tax-table">
+                            <thead>
                                 <tr>
-                                    <td>${parseFloat(item.fx_rate).toFixed(2)}</td>
-                                    <td>${item.hsn_sac}</td>
-                                    <td>${parseFloat(item.igst_percent).toFixed(2)}%</td>
-                                    <td>$${parseFloat(item.taxable_amount_usd).toFixed(2)}</td>
-                                    <td>₹${parseFloat(item.taxable_amount_inr).toFixed(2)}</td>
-                                    <td>$${parseFloat(item.igst_usd).toFixed(2)}</td>
-                                    <td>₹${parseFloat(item.igst_inr).toFixed(2)}</td>
-                                    <td>₹${(parseFloat(item.taxable_amount_inr) + parseFloat(item.igst_inr)).toFixed(2)}</td>
+                                    <th>FX Rate</th>
+                                    <th>HSN/SAC</th>
+                                    <th>IGST %</th>
+                                    <th>Taxable ($)</th>
+                                    <th>Taxable (₹)</th>
+                                    <th>IGST ($)</th>
+                                    <th>IGST (₹)</th>
+                                    <th>Total (₹)</th>
                                 </tr>
-                            `).join('')}
-                        </tbody>
-                    </table>
+                            </thead>
+                            <tbody>
+                                ${items.map(item => `
+                                    <tr>
+                                        <td>${parseFloat(item.fx_rate).toFixed(2)}</td>
+                                        <td>${item.hsn_sac}</td>
+                                        <td>${parseFloat(item.igst_percent).toFixed(2)}%</td>
+                                        <td>$${parseFloat(item.taxable_amount_usd).toFixed(2)}</td>
+                                        <td>₹${parseFloat(item.taxable_amount_inr).toFixed(2)}</td>
+                                        <td>$${parseFloat(item.igst_usd).toFixed(2)}</td>
+                                        <td>₹${parseFloat(item.igst_inr).toFixed(2)}</td>
+                                        <td>₹${(parseFloat(item.taxable_amount_inr) + parseFloat(item.igst_inr)).toFixed(2)}</td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
-            </div>
-            
-            <!-- Totals -->
-            <div class="total-section">
-                <div class="total-row">
-                    <span>Total Bill Value (USD):</span>
-                    <span>$${parseFloat(invoice.total_amount_usd).toFixed(2)}</span>
+                
+                <!-- Totals -->
+                <div class="total-section">
+                    <div class="total-row">
+                        <span>Total Bill Value (USD):</span>
+                        <span>$${parseFloat(invoice.total_amount_usd).toFixed(2)}</span>
+                    </div>
+                    <div class="total-row">
+                        <span>Total Bill Value (INR):</span>
+                        <span>₹${parseFloat(invoice.total_amount_inr).toFixed(2)}</span>
+                    </div>
+                    <div class="total-row total-final">
+                        <span>Total Invoice Amount (INR):</span>
+                        <span>₹${parseFloat(invoice.total_amount_inr).toFixed(2)}</span>
+                    </div>
                 </div>
-                <div class="total-row">
-                    <span>Total Bill Value (INR):</span>
-                    <span>₹${parseFloat(invoice.total_amount_inr).toFixed(2)}</span>
+                
+                <!-- Declaration -->
+                <div class="declaration">
+                    <p><strong>Declaration:</strong> We declare that this invoice shows the actual price of the services described and that all particulars are true and correct.</p>
                 </div>
-                <div class="total-row total-final">
-                    <span>Total Invoice Amount (INR):</span>
-                    <span>₹${parseFloat(invoice.total_amount_inr).toFixed(2)}</span>
-                </div>
-            </div>
-            
-            <!-- Declaration -->
-            <div class="declaration">
-                <p><strong>Declaration:</strong> We declare that this invoice shows the actual price of the services described and that all particulars are true and correct.</p>
-            </div>
-            
-            <!-- Signature -->
-            <div class="signature-section">
-                <div class="signature-box">
-                    <div class="signature-line"></div>
-                    <span>Authorized Signatory</span>
-                </div>
-                <div class="signature-box">
-                    <div class="signature-line"></div>
-                    <span>For ACCEX Supply Chain Private Limited</span>
+                
+                <!-- Signature -->
+                <div class="signature-section">
+                    <div class="signature-box">
+                        <div class="signature-line"></div>
+                        <span>Authorized Signatory</span>
+                    </div>
+                    <div class="signature-box">
+                        <div class="signature-line"></div>
+                        <span>For ACCEX Supply Chain Private Limited</span>
+                    </div>
                 </div>
             </div>
         </div>
         
-        <div class="modal-actions" style="margin-top: 24px; text-align: center;">
+        <div class="modal-actions">
             ${invoice.status === 'draft' ? `
-                <button class="btn btn-primary" onclick="finalizeInvoice(${invoice.id})">
+                <button class="btn btn-success" onclick="finalizeInvoice(${invoice.id})">
                     <i class="fas fa-check"></i> Finalize Invoice
                 </button>
             ` : `
-                <button class="btn btn-success" onclick="downloadInvoicePDF(${invoice.id})">
+                <button class="btn btn-primary" onclick="downloadInvoicePDF(${invoice.id})">
                     <i class="fas fa-file-pdf"></i> Download PDF
                 </button>
             `}
-            <button class="btn btn-secondary" onclick="window.print()">
+            <button class="btn btn-secondary" onclick="printInvoice()">
                 <i class="fas fa-print"></i> Print Invoice
             </button>
         </div>
@@ -780,16 +836,22 @@ function downloadInvoicePDF(invoiceId) {
         <head>
             <title>Invoice PDF</title>
             <style>
+                @page {
+                    size: A4;
+                    margin: 0;
+                }
                 body {
                     font-family: Arial, sans-serif;
                     margin: 0;
                     padding: 20px;
+                    background-color: white;
                 }
                 .invoice-container {
                     max-width: 800px;
                     margin: 0 auto;
                     padding: 30px;
                     border: 1px solid #e2e8f0;
+                    background-color: white;
                 }
                 table {
                     width: 100%;
@@ -805,16 +867,94 @@ function downloadInvoicePDF(invoiceId) {
                     background-color: #f7fafc;
                     font-weight: 600;
                 }
-                .invoice-header {
-                    display: flex;
-                    justify-content: space-between;
-                    margin-bottom: 30px;
-                }
-                .company-details, .invoice-details {
+                .invoice-header-print {
+                    text-align: center;
                     margin-bottom: 20px;
                 }
+                .company-name {
+                    font-size: 1.5rem;
+                    font-weight: 700;
+                    color: #1e293b;
+                    margin-bottom: 5px;
+                }
+                .company-address {
+                    color: #475569;
+                    font-size: 0.875rem;
+                    margin-bottom: 5px;
+                }
+                .invoice-title {
+                    text-align: center;
+                    font-size: 1.25rem;
+                    font-weight: 700;
+                    margin: 20px 0;
+                    color: #2563eb;
+                    text-transform: uppercase;
+                    border-bottom: 2px solid #2563eb;
+                    padding-bottom: 10px;
+                }
+                .invoice-details-print {
+                    display: flex;
+                    justify-content: space-between;
+                    margin-bottom: 20px;
+                }
+                .invoice-info {
+                    flex: 1;
+                }
+                .invoice-info-row {
+                    margin-bottom: 5px;
+                }
+                .invoice-info-label {
+                    font-weight: 600;
+                }
+                .bill-to-section {
+                    margin-bottom: 20px;
+                }
+                .bill-to-section h3 {
+                    font-size: 1rem;
+                    margin-bottom: 10px;
+                }
+                .bill-to-content {
+                    display: flex;
+                    gap: 20px;
+                }
+                .bill-to-item {
+                    flex: 1;
+                    display: flex;
+                    flex-direction: column;
+                }
+                .bill-to-item strong {
+                    margin-bottom: 5px;
+                }
+                .invoice-table {
+                    width: 100%;
+                    border-collapse: collapse;
+                }
+                .invoice-table th, .invoice-table td {
+                    border: 1px solid #e2e8f0;
+                    padding: 8px;
+                    text-align: left;
+                }
+                .invoice-table th {
+                    background-color: #f7fafc;
+                }
+                .tax-summary {
+                    margin: 20px 0;
+                }
+                .tax-summary h3 {
+                    font-size: 1rem;
+                    margin-bottom: 10px;
+                }
+                .tax-table {
+                    width: 100%;
+                    border-collapse: collapse;
+                }
+                .tax-table th, .tax-table td {
+                    border: 1px solid #e2e8f0;
+                    padding: 8px;
+                    text-align: center;
+                }
                 .total-section {
-                    margin-top: 30px;
+                    margin-top: 20px;
                 }
                 .total-row {
                     display: flex;
@@ -828,15 +968,41 @@ function downloadInvoicePDF(invoiceId) {
                     padding-top: 10px;
                     margin-top: 10px;
                 }
+                .declaration {
+                    margin: 20px 0;
+                    font-size: 0.9em;
+                }
                 .signature-section {
                     margin-top: 50px;
                     display: flex;
                     justify-content: space-between;
                 }
+                .signature-box {
+                    text-align: center;
+                }
                 .signature-line {
                     width: 200px;
                     border-top: 1px solid #000;
                     margin-bottom: 5px;
+                }
+                .modal-actions {
+                    display: none;
+                }
+                @media print {
+                    body * {
+                        visibility: visible;
+                    }
+                    .modal-actions, .modal-header, .modal-close {
+                        display: none !important;
+                    }
+                    .invoice-container {
+                        border: none !important;
+                        box-shadow: none !important;
+                        padding: 0;
+                    }
+                    .invoice-print {
+                        padding: 0;
+                    }
                 }
             </style>
         </head>
@@ -873,6 +1039,9 @@ async function finalizeInvoice(invoiceId) {
             closeModal();
             loadInvoices();
             loadDashboardData();
+            
+            // Add to recent activity
+            addRecentActivity('finalized', `Invoice ${data.invoice_no} finalized`);
         } else {
             showToast(data.error || 'Failed to finalize invoice', 'error');
         }
@@ -886,6 +1055,20 @@ async function finalizeInvoice(invoiceId) {
 
 function closeModal() {
     invoiceModal.classList.remove('show');
+}
+
+// Function to print the current invoice
+function printInvoice() {
+    // Apply print-specific styles
+    document.body.classList.add('printing');
+    
+    // Print the document
+    window.print();
+    
+    // Remove print-specific styles after printing
+    setTimeout(() => {
+        document.body.classList.remove('printing');
+    }, 1000);
 }
 
 // Dashboard functions
@@ -907,28 +1090,33 @@ async function loadDashboardData() {
 }
 
 function updateDashboardStats() {
-    totalShipments.textContent = shipments.length;
-    totalInvoices.textContent = invoices.length;
+    // Check if elements exist before updating them
+    if (totalShipments) totalShipments.textContent = shipments.length;
+    if (totalInvoices) totalInvoices.textContent = invoices.length;
     
     const totalRevenueUSD = invoices.reduce((sum, invoice) => sum + parseFloat(invoice.total_amount_usd || 0), 0);
-    totalRevenue.textContent = `$${totalRevenueUSD.toFixed(2)}`;
+    if (totalRevenue) totalRevenue.textContent = `$${totalRevenueUSD.toFixed(2)}`;
     
     const pendingCount = invoices.filter(invoice => invoice.status === 'draft').length;
-    pendingInvoices.textContent = pendingCount;
+    if (pendingInvoices) pendingInvoices.textContent = pendingCount;
     
     // Update recent activity
     updateRecentActivity();
 }
 
 function updateRecentActivity() {
+    // Check if recentActivity element exists
+    if (!recentActivity) return;
+    
     const recentItems = [];
     
     // Add recent shipments
     const recentShipments = shipments.slice(0, 3);
     recentShipments.forEach(shipment => {
         recentItems.push({
-            icon: 'fas fa-ship',
-            text: `New shipment created: ${shipment.shipment_type} - ${shipment.shipment_subtype}`
+            icon: 'created',
+            text: `New shipment created: ${shipment.shipment_type} - ${shipment.shipment_subtype}`,
+            time: 'Today'
         });
     });
     
@@ -936,29 +1124,72 @@ function updateRecentActivity() {
     const recentInvoices = invoices.slice(0, 3);
     recentInvoices.forEach(invoice => {
         recentItems.push({
-            icon: 'fas fa-file-invoice',
-            text: `Invoice ${invoice.invoice_no} ${invoice.status === 'finalized' ? 'finalized' : 'created'}`
+            icon: invoice.status === 'finalized' ? 'finalized' : 'created',
+            text: `Invoice ${invoice.invoice_no} ${invoice.status === 'finalized' ? 'finalized' : 'created'}`,
+            time: 'Today'
         });
     });
     
     // Sort by date and take latest 5
-    recentItems.sort((a, b) => new Date(b.date) - new Date(a.date));
     const displayItems = recentItems.slice(0, 5);
     
     if (displayItems.length === 0) {
         recentActivity.innerHTML = `
-            <div class="activity-item">
-                <i class="fas fa-info-circle"></i>
-                <span>No recent activity</span>
-            </div>
+            <li class="activity-item">
+                <div class="activity-icon info">
+                    <i class="fas fa-info"></i>
+                </div>
+                <div class="activity-content">
+                    <div class="activity-text">No recent activity</div>
+                    <div class="activity-time">Just now</div>
+                </div>
+            </li>
         `;
     } else {
         recentActivity.innerHTML = displayItems.map(item => `
-            <div class="activity-item">
-                <i class="${item.icon}"></i>
-                <span>${item.text}</span>
-            </div>
+            <li class="activity-item">
+                <div class="activity-icon ${item.icon}">
+                    <i class="fas ${getIconClass(item.icon)}"></i>
+                </div>
+                <div class="activity-content">
+                    <div class="activity-text">${item.text}</div>
+                    <div class="activity-time">${item.time}</div>
+                </div>
+            </li>
         `).join('');
+    }
+}
+
+function getIconClass(type) {
+    switch(type) {
+        case 'created': return 'fa-plus';
+        case 'finalized': return 'fa-check';
+        case 'info': return 'fa-info';
+        default: return 'fa-circle';
+    }
+}
+
+function addRecentActivity(type, text) {
+    if (!recentActivity) return;
+    
+    const newItem = document.createElement('li');
+    newItem.className = 'activity-item';
+    newItem.innerHTML = `
+        <div class="activity-icon ${type}">
+            <i class="fas ${getIconClass(type)}"></i>
+        </div>
+        <div class="activity-content">
+            <div class="activity-text">${text}</div>
+            <div class="activity-time">Just now</div>
+        </div>
+    `;
+    
+    // Add to the beginning of the list
+    recentActivity.insertBefore(newItem, recentActivity.firstChild);
+    
+    // Remove excess items
+    while (recentActivity.children.length > 5) {
+        recentActivity.removeChild(recentActivity.lastChild);
     }
 }
 
@@ -977,13 +1208,16 @@ function showToast(message, type = 'info') {
     toast.className = `toast ${type}`;
     
     toast.innerHTML = `
-        <div class="toast-header">
-            <span class="toast-title">${type.charAt(0).toUpperCase() + type.slice(1)}</span>
-            <button class="toast-close" onclick="this.parentElement.parentElement.remove()">
-                <i class="fas fa-times"></i>
-            </button>
+        <div class="toast-icon">
+            <i class="fas ${getToastIcon(type)}"></i>
         </div>
-        <div class="toast-message">${message}</div>
+        <div class="toast-content">
+            <div class="toast-title">${capitalizeFirstLetter(type)}</div>
+            <div class="toast-message">${message}</div>
+        </div>
+        <button class="toast-close" onclick="this.parentElement.remove()">
+            <i class="fas fa-times"></i>
+        </button>
     `;
     
     toastContainer.appendChild(toast);
@@ -994,6 +1228,20 @@ function showToast(message, type = 'info') {
             toast.remove();
         }
     }, 5000);
+}
+
+function getToastIcon(type) {
+    switch(type) {
+        case 'success': return 'fa-check-circle';
+        case 'error': return 'fa-exclamation-circle';
+        case 'warning': return 'fa-exclamation-triangle';
+        case 'info': 
+        default: return 'fa-info-circle';
+    }
+}
+
+function capitalizeFirstLetter(string) {
+    return string.charAt(0).toUpperCase() + string.slice(1);
 }
 
 // Print styles for invoice
@@ -1010,10 +1258,43 @@ const printStyles = `
             left: 0;
             top: 0;
             width: 100%;
+            padding: 20px;
         }
-        .modal-actions {
+        .modal-actions, .modal-header, .modal-close {
             display: none !important;
         }
+        .invoice-container {
+            border: none !important;
+            box-shadow: none !important;
+        }
+    }
+    
+    body.printing * {
+        visibility: hidden;
+    }
+    
+    body.printing .invoice-print, 
+    body.printing .invoice-print * {
+        visibility: visible;
+    }
+    
+    body.printing .invoice-print {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+        padding: 20px;
+    }
+    
+    body.printing .modal-actions, 
+    body.printing .modal-header, 
+    body.printing .modal-close {
+        display: none !important;
+    }
+    
+    body.printing .invoice-container {
+        border: none !important;
+        box-shadow: none !important;
     }
 `;
 
@@ -1021,3 +1302,9 @@ const printStyles = `
 const styleSheet = document.createElement('style');
 styleSheet.textContent = printStyles;
 document.head.appendChild(styleSheet);
+
+// Make functions available globally
+window.showInvoiceModal = showInvoiceModal;
+window.finalizeInvoice = finalizeInvoice;
+window.downloadInvoicePDF = downloadInvoicePDF;
+window.printInvoice = printInvoice;

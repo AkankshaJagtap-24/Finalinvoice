@@ -12,10 +12,14 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 // Middleware
-app.use(cors());
+app.use(cors({
+    origin: ['http://localhost:3000', 'http://127.0.0.1:5500'],
+    credentials: true
+}));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static('public'));
+app.use(express.static(path.join(__dirname, '/')));
 app.use(session({
     secret: 'shipment-invoice-secret-key',
     resave: false,
@@ -150,30 +154,40 @@ app.get('/', (req, res) => {
 
 // Login API
 app.post('/api/login', (req, res) => {
-    const { email, password } = req.body;
-    
-    db.get('SELECT * FROM users WHERE email = ?', [email], (err, user) => {
-        if (err) {
-            return res.status(500).json({ error: 'Database error' });
+    try {
+        const { email, password } = req.body;
+        
+        if (!email || !password) {
+            return res.status(400).json({ error: 'Email and password are required' });
         }
         
-        if (!user || !bcrypt.compareSync(password, user.password)) {
-            return res.status(401).json({ error: 'Invalid credentials' });
-        }
-        
-        req.session.userId = user.id;
-        req.session.userEmail = user.email;
-        req.session.userName = user.name;
-        
-        res.json({ 
-            success: true, 
-            user: { 
-                id: user.id, 
-                email: user.email, 
-                name: user.name 
-            } 
+        db.get('SELECT * FROM users WHERE email = ?', [email], (err, user) => {
+            if (err) {
+                console.error('Database error:', err);
+                return res.status(500).json({ error: 'Database error' });
+            }
+            
+            if (!user || !bcrypt.compareSync(password, user.password)) {
+                return res.status(401).json({ error: 'Invalid credentials' });
+            }
+            
+            req.session.userId = user.id;
+            req.session.userEmail = user.email;
+            req.session.userName = user.name;
+            
+            return res.json({ 
+                success: true, 
+                user: { 
+                    id: user.id, 
+                    email: user.email, 
+                    name: user.name 
+                } 
+            });
         });
-    });
+    } catch (error) {
+        console.error('Login error:', error);
+        return res.status(500).json({ error: 'Server error' });
+    }
 });
 
 // Sign Up API

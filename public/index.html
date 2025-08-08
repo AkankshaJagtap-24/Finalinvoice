@@ -3,10 +3,22 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ACCEX Supply Chain Solutions - Shipment & Invoice Manager</title>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <title>Shipment Invoice Manager</title>
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="assets/images/logo.svg">
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="styles.css">
+    
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Stylesheets -->
+    <link rel="stylesheet" href="assets/css/modern-normalize.min.css">
+    <link rel="stylesheet" href="assets/css/styles.css">
 </head>
 <body>
     <!-- Login Page -->
@@ -14,135 +26,118 @@
         <div class="login-card">
             <div class="login-header">
                 <div class="company-logo">
-                    <img src="logo.svg" alt="ACCEX Logo" class="logo-image">
+                    <img src="assets/images/logo.svg" alt="ACCEX Logo" class="logo-image">
                 </div>
-                <p>Supply Chain Solutions</p>
+                <h2>Welcome to Shipment Invoice Manager</h2>
+                <p>Sign in to your account to continue</p>
             </div>
             
+            <!-- Login Form -->
             <form id="loginForm" class="login-form">
                 <div class="form-group">
                     <label for="email">Email Address</label>
-                    <input type="email" id="email" name="email" required placeholder="Enter your email">
+                    <input type="email" id="email" name="email" placeholder="Enter your email" required>
                 </div>
-                
                 <div class="form-group">
                     <label for="password">Password</label>
-                    <input type="password" id="password" name="password" required placeholder="Enter your password">
+                    <input type="password" id="password" name="password" placeholder="Enter your password" required>
                 </div>
-                
-                <button type="submit" class="login-btn">
-                    Sign In
-                </button>
-                
-                <div class="form-divider">
-                    <span>or</span>
+                <button type="submit" class="btn btn-primary btn-block">Sign In</button>
+                <div class="text-center mt-md">
+                    <p class="mb-xs">Don't have an account?</p>
+                    <button type="button" class="btn btn-secondary btn-block signup-btn">Create Account</button>
                 </div>
-                
-                <button type="button" class="signup-btn" onclick="showSignupForm()">
-                    Create New Account
-                </button>
+                <div class="text-center mt-md">
+                    <p class="text-secondary">Default login: admin@123.com / admin123</p>
+                </div>
             </form>
             
-            <!-- Sign Up Form (Hidden by default) -->
-            <form id="signupForm" class="signup-form hidden">
+            <!-- Signup Form -->
+            <form id="signupForm" class="login-form hidden">
                 <div class="form-group">
-                    <label for="signupName">Full Name</label>
-                    <input type="text" id="signupName" name="name" required placeholder="Enter your full name">
+                    <label for="name">Full Name</label>
+                    <input type="text" id="name" name="name" placeholder="Enter your full name" required>
                 </div>
-                
                 <div class="form-group">
                     <label for="signupEmail">Email Address</label>
-                    <input type="email" id="signupEmail" name="email" required placeholder="Enter your email">
+                    <input type="email" id="signupEmail" name="email" placeholder="Enter your email" required>
                 </div>
-                
                 <div class="form-group">
                     <label for="signupPassword">Password</label>
-                    <input type="password" id="signupPassword" name="password" required placeholder="Create a password">
+                    <input type="password" id="signupPassword" name="password" placeholder="Create a password" required>
                 </div>
-                
                 <div class="form-group">
-                    <label for="signupConfirmPassword">Confirm Password</label>
-                    <input type="password" id="signupConfirmPassword" name="confirmPassword" required placeholder="Confirm your password">
+                    <label for="confirmPassword">Confirm Password</label>
+                    <input type="password" id="confirmPassword" name="confirmPassword" placeholder="Confirm your password" required>
                 </div>
-                
-                <button type="submit" class="login-btn">
-                    Create Account
-                </button>
-                
-                <div class="form-divider">
-                    <span>or</span>
+                <button type="submit" class="btn btn-primary btn-block">Create Account</button>
+                <div class="text-center mt-md">
+                    <p class="mb-xs">Already have an account?</p>
+                    <button type="button" class="btn btn-secondary btn-block signup-btn">Sign In</button>
                 </div>
-                
-                <button type="button" class="signup-btn" onclick="showLoginForm()">
-                    Back to Sign In
-                </button>
             </form>
-            
-            <div class="login-footer">
-                <p>Default credentials: admin@123.com / admin123</p>
-            </div>
         </div>
     </div>
-
+    
     <!-- Dashboard -->
-    <div id="dashboard" class="dashboard hidden">
+    <div id="dashboard" class="app-container hidden">
         <!-- Sidebar -->
-        <nav class="sidebar">
+        <aside class="sidebar">
             <div class="sidebar-header">
-                <div class="company-logo">
-                    <img src="logo.svg" alt="ACCEX Logo" class="logo-image">
+                <div class="sidebar-logo">
+                    <img src="assets/images/logo.svg" alt="ACCEX Logo">
                 </div>
+                <button class="sidebar-toggle">
+                    <i class="fas fa-bars"></i>
+                </button>
             </div>
             
-            <div class="sidebar-menu">
-                <div class="menu-section">
-                    <h3>Navigation</h3>
-                    <ul class="nav-links">
-                        <li class="nav-item active" data-page="dashboard">
-                            <i class="fas fa-tachometer-alt"></i>
-                            <span>Dashboard</span>
-                        </li>
-                        <li class="nav-item" data-page="addShipment">
-                            <i class="fas fa-plus-circle"></i>
-                            <span>Add Shipment</span>
-                        </li>
-                        <li class="nav-item" data-page="viewInvoices">
-                            <i class="fas fa-file-invoice"></i>
-                            <span>View Invoices</span>
-                        </li>
-                    </ul>
-                </div>
-                
-                <div class="menu-section">
-                    <h3>Account</h3>
-                    <ul class="nav-links">
-                        <li class="nav-item" id="logoutBtn">
-                            <i class="fas fa-sign-out-alt"></i>
-                            <span>Logout</span>
-                        </li>
-                    </ul>
-                </div>
+            <ul class="nav-list">
+                <li class="nav-item active" data-page="dashboard">
+                    <a href="#" class="nav-link">
+                        <i class="fas fa-tachometer-alt"></i>
+                        <span>Dashboard</span>
+                    </a>
+                </li>
+                <li class="nav-item" data-page="addShipment">
+                    <a href="#" class="nav-link">
+                        <i class="fas fa-ship"></i>
+                        <span>Add Shipment</span>
+                    </a>
+                </li>
+                <li class="nav-item" data-page="viewInvoices">
+                    <a href="#" class="nav-link">
+                        <i class="fas fa-file-invoice-dollar"></i>
+                        <span>View Invoices</span>
+                    </a>
+                </li>
+            </ul>
+            
+            <div class="sidebar-footer">
+                <button id="logoutBtn" class="btn btn-secondary btn-block">
+                    <i class="fas fa-sign-out-alt"></i>
+                    <span>Logout</span>
+                </button>
             </div>
-        </nav>
-
+        </aside>
+        
         <!-- Main Content -->
         <main class="main-content">
-            <!-- Header -->
-            <header class="content-header">
-                <div class="header-left">
-                    <h1 id="pageTitle">Dashboard</h1>
-                </div>
-                <div class="header-right">
+            <header class="header">
+                <div class="header-title" id="pageTitle">Dashboard</div>
+                <div class="user-menu">
                     <div class="user-info">
-                        <i class="fas fa-user-circle"></i>
-                        <span id="userName">Administrator</span>
+                        <div class="user-avatar">
+                            <i class="fas fa-user"></i>
+                        </div>
+                        <span class="user-name" id="userName">User Name</span>
                     </div>
                 </div>
             </header>
-
-            <!-- Content Area -->
-            <div class="content-area">
-                <!-- Dashboard Page -->
+            
+            <div class="content">
+                
+                 <!-- Dashboard Page -->
                 <div id="dashboardPage" class="page-content">
                     <div class="welcome-message">
                         <div class="welcome-icon">
@@ -151,149 +146,186 @@
                         <h2>You're logged in!</h2>
                         <p>This is your dashboard. You can manage your account, view your profile, and access other features.</p>
                     </div>
-                </div>
-
+            </div>
+                
                 <!-- Add Shipment Page -->
-                <div id="addShipmentPage" class="page-content hidden">
-                    <div class="form-container">
+                <div id="addShipmentPage" class="page hidden">
+                    <div class="form-card">
                         <div class="form-header">
-                            <h3>Create New Shipment</h3>
+                            <h3 class="form-title">Create New Shipment</h3>
+                            <p class="form-subtitle">Fill in the shipment details to generate an invoice</p>
                         </div>
-                        <form id="shipmentForm" class="shipment-form">
-                            <div class="form-body">
-                                
-                                <div class="form-row">
+                        
+                        <form id="shipmentForm">
+                            <div class="form-row">
+                                <div class="form-col">
                                     <div class="form-group">
-                                        <label for="shipmentType">Shipment Type *</label>
+                                        <label for="shipmentType">Shipment Type</label>
                                         <select id="shipmentType" name="shipmentType" required>
                                             <option value="">Select Shipment Type</option>
                                             <option value="Inbound">Inbound</option>
                                             <option value="Outbound">Outbound</option>
                                         </select>
                                     </div>
-                                    
+                                </div>
+                                
+                                <div class="form-col">
                                     <div class="form-group">
-                                        <label for="shipmentSubtype">Shipment Subtype *</label>
-                                        <select id="shipmentSubtype" name="shipmentSubtype" required disabled>
+                                        <label for="shipmentSubtype">Shipment Subtype</label>
+                                        <select id="shipmentSubtype" name="shipmentSubtype" disabled required>
                                             <option value="">Select Shipment Type First</option>
                                         </select>
                                     </div>
                                 </div>
-                                
-                                <div class="form-row">
+                            </div>
+                            
+                            <div class="form-row">
+                                <div class="form-col">
                                     <div class="form-group">
                                         <label for="asc">ASC</label>
                                         <input type="text" id="asc" name="asc" placeholder="Enter ASC">
                                     </div>
-                                    
+                                </div>
+                                
+                                <div class="form-col">
                                     <div class="form-group">
                                         <label for="sh">SH</label>
                                         <input type="text" id="sh" name="sh" placeholder="Enter SH">
                                     </div>
-                                    
+                                </div>
+                                
+                                <div class="form-col">
                                     <div class="form-group">
                                         <label for="ref">Ref</label>
-                                        <input type="text" id="ref" name="ref" placeholder="Enter Ref">
-                                    </div>
-                                </div>
-                                
-                                <div class="form-row">
-                                    <div class="form-group">
-                                        <label for="customerSelect">Bill To *</label>
-                                        <select id="customerSelect" name="customer_id" required>
-                                            <option value="">Select Customer</option>
-                                        </select>
-                                    </div>
-                                    
-                                    <div class="form-group">
-                                        <label for="cbm">CBM *</label>
-                                        <input type="number" id="cbm" name="cbm" step="0.01" required placeholder="Enter CBM">
-                                    </div>
-                                    
-                                    <div class="form-group">
-                                        <label for="odc">ODC</label>
-                                        <select id="odc" name="odc">
-                                            <option value="">Select ODC</option>
-                                            <option value="Yes">Yes</option>
-                                            <option value="No">No</option>
-                                        </select>
-                                    </div>
-                                </div>
-                                
-                                <div class="form-row">
-                                    <div class="form-group dimension-field">
-                                        <label for="length">Length (L)</label>
-                                        <input type="number" id="length" name="length" step="0.01" placeholder="Enter Length">
-                                    </div>
-                                    
-                                    <div class="form-group dimension-field">
-                                        <label for="breadth">Breadth (B)</label>
-                                        <input type="number" id="breadth" name="breadth" step="0.01" placeholder="Enter Breadth">
-                                    </div>
-                                    
-                                    <div class="form-group dimension-field">
-                                        <label for="height">Height (H)</label>
-                                        <input type="number" id="height" name="height" step="0.01" placeholder="Enter Height">
-                                    </div>
-                                    
-                                    <div class="form-group">
-                                        <label for="packages">Packages (Pkgs)</label>
-                                        <input type="number" id="packages" name="packages" placeholder="Enter Packages">
+                                        <input type="text" id="ref" name="ref" placeholder="Enter Reference">
                                     </div>
                                 </div>
                             </div>
                             
-                            <div class="customer-details" id="customerDetails">
-                                <div class="form-row">
+                            <div class="form-row">
+                                <div class="form-col">
                                     <div class="form-group">
-                                        <label for="gstinSearch">GSTIN / Company Search</label>
-                                        <div class="search-container">
-                                            <input type="text" id="gstinSearch" placeholder="Search by GSTIN or company name">
-                                            <div class="dropdown-results" id="gstinSearchResults"></div>
+                                        <label for="customerSelect">Customer</label>
+                                        <select id="customerSelect" name="customer_id" required>
+                                            <option value="">Select Customer</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                
+                                <div class="form-col">
+                                    <div class="form-group">
+                                        <label for="cbm">CBM</label>
+                                        <input type="number" id="cbm" name="cbm" step="0.01" placeholder="Enter CBM" required>
+                                    </div>
+                                </div>
+                                
+                                <div class="form-col">
+                                    <div class="form-group">
+                                        <label for="odc">ODC</label>
+                                        <select id="odc" name="odc" required>
+                                            <option value="No">No</option>
+                                            <option value="Yes">Yes</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="form-row">
+                                <div class="form-col dimension-field hidden">
+                                    <div class="form-group">
+                                        <label for="length">Length (cm)</label>
+                                        <input type="number" id="length" name="length" step="0.01" placeholder="Enter Length">
+                                    </div>
+                                </div>
+                                
+                                <div class="form-col dimension-field hidden">
+                                    <div class="form-group">
+                                        <label for="breadth">Breadth (cm)</label>
+                                        <input type="number" id="breadth" name="breadth" step="0.01" placeholder="Enter Breadth">
+                                    </div>
+                                </div>
+                                
+                                <div class="form-col dimension-field hidden">
+                                    <div class="form-group">
+                                        <label for="height">Height (cm)</label>
+                                        <input type="number" id="height" name="height" step="0.01" placeholder="Enter Height">
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="form-row">
+                                <div class="form-col">
+                                    <div class="form-group">
+                                        <label for="packages">Packages</label>
+                                        <input type="number" id="packages" name="packages" placeholder="Enter Number of Packages">
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div id="customerDetails" class="form-card mt-md hidden">
+                                <div class="form-header">
+                                    <h4 class="form-title">Customer Details</h4>
+                                </div>
+                                
+                                <div class="form-row">
+                                    <div class="form-col">
+                                        <div class="form-group search-container">
+                                            <label for="gstinSearch">GSTIN/Company Search</label>
+                                            <input type="text" id="gstinSearch" placeholder="Search by company name or GSTIN">
+                                            <div id="gstinSearchResults" class="dropdown-results"></div>
                                         </div>
                                     </div>
                                 </div>
+                                
                                 <div class="form-row">
-                                    <div class="form-group">
-                                        <label>GSTIN</label>
-                                        <input type="text" id="customerGstin">
+                                    <div class="form-col">
+                                        <div class="form-group">
+                                            <label for="customerGstin">GSTIN</label>
+                                            <input type="text" id="customerGstin" name="gstin" readonly>
+                                        </div>
                                     </div>
-                                    <div class="form-group">
-                                        <label>BOE</label>
-                                        <input type="text" id="customerBoe">
+                                    
+                                    <div class="form-col">
+                                        <div class="form-group">
+                                            <label for="customerBoe">BOE</label>
+                                            <input type="text" id="customerBoe" name="boe" readonly>
+                                        </div>
                                     </div>
-                                    <div class="form-group">
-                                        <label>New Ton</label>
-                                        <input type="text" id="customerNewTon">
+                                    
+                                    <div class="form-col">
+                                        <div class="form-group">
+                                            <label for="customerNewTon">New Ton</label>
+                                            <input type="text" id="customerNewTon" name="new_ton" readonly>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
                             
                             <div class="form-actions">
-                                <button type="submit" class="btn btn-primary">
-                                    <i class="fas fa-save"></i>
-                                    Create Shipment & Generate Invoice
-                                </button>
                                 <button type="reset" class="btn btn-secondary">
-                                    <i class="fas fa-undo"></i>
-                                    Reset Form
+                                    <i class="fas fa-undo"></i> Reset Form
+                                </button>
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-plus"></i> Create Shipment & Generate Invoice
                                 </button>
                             </div>
                         </form>
                     </div>
                 </div>
-
+                
                 <!-- View Invoices Page -->
-                <div id="viewInvoicesPage" class="page-content hidden">
-                    <div class="form-container">
+                <div id="viewInvoicesPage" class="page hidden">
+                    <div class="form-card">
                         <div class="form-header">
-                            <h3>Invoice Management</h3>
-                            <div class="invoices-actions">
-                                <select id="invoiceFilter">
-                                    <option value="all">All Invoices</option>
-                                    <option value="draft">Draft Invoices</option>
-                                    <option value="finalized">Finalized Invoices</option>
-                                </select>
+                            <div class="flex justify-between items-center">
+                                <h3 class="form-title">Invoice Management</h3>
+                                <div class="form-group mb-0">
+                                    <select id="invoiceFilter" class="form-control">
+                                        <option value="all">All Invoices</option>
+                                        <option value="draft">Draft Invoices</option>
+                                        <option value="finalized">Finalized Invoices</option>
+                                    </select>
+                                </div>
                             </div>
                         </div>
                         
@@ -333,6 +365,5 @@
     <div id="toastContainer" class="toast-container"></div>
 
     <script src="script.js"></script>
-    
 </body>
 </html>
