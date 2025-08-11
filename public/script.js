@@ -153,22 +153,12 @@ function setupEventListeners() {
 
 // Authentication functions
 async function checkAuthStatus() {
-    try {
-        const response = await fetch('/api/auth/status', {
-            method: 'GET',
-            credentials: 'include'
-        });
-        
-        if (response.ok) {
-            const data = await response.json();
-            currentUser = data.user;
-            showDashboard();
-        } else {
-            // This is expected behavior when user is not logged in (401)
-            showLoginPage();
-        }
-    } catch (error) {
-        console.error('Auth check failed:', error);
+    // Demo mode - check if user is stored in localStorage
+    const storedUser = localStorage.getItem('demoUser');
+    if (storedUser) {
+        currentUser = JSON.parse(storedUser);
+        showDashboard();
+    } else {
         showLoginPage();
     }
 }
@@ -643,63 +633,90 @@ function displayInvoiceModal(data) {
     invoiceModalBody.innerHTML = `
         <div class="invoice-container">
             <div class="invoice-print">
-                <!-- Company Header -->
+                <!-- Company Header with Logo -->
                 <div class="invoice-header-print">
-                    <div class="company-name">ACCEX SUPPLY CHAIN PRIVATE LIMITED</div>
-                    <div class="company-address">181/3, Taluka Panvel, Sai Village, igad, Maharashtra - 410206</div>
-                    <div class="company-address">Website: www.accexscs.com</div>
-                    <div class="invoice-title">TAX INVOICE</div>
-                </div>
-            
-                <!-- Invoice Details -->
-                <div class="invoice-details-print">
-                    <div class="invoice-info">
-                        <div class="invoice-info-row">
-                            <span class="invoice-info-label">Invoice No.:</span>
-                            <span>${invoice.invoice_no}</span>
-                        </div>
-                        <div class="invoice-info-row">
-                            <span class="invoice-info-label">Invoice Date:</span>
-                            <span>${invoice.invoice_date}</span>
-                        </div>
-                        <div class="invoice-info-row">
-                            <span class="invoice-info-label">Place of Supply:</span>
-                            <span>${invoice.place_of_supply}</span>
-                        </div>
+                    <div class="header-left">
+                        <img src="/images/accex-logo.png" alt="ACCEX Logo" class="company-logo-img">
                     </div>
-                    <div class="invoice-info">
-                        <div class="invoice-info-row">
-                            <span class="invoice-info-label">GSTIN of Recipient:</span>
-                            <span>${invoice.gstin_recipient || 'N/A'}</span>
-                        </div>
-                        <div class="invoice-info-row">
-                            <span class="invoice-info-label">State:</span>
-                            <span>${invoice.state}</span>
-                        </div>
-                        <div class="invoice-info-row">
-                            <span class="invoice-info-label">State Code:</span>
-                            <span>${invoice.state_code}</span>
+                    <div class="header-right">
+                        <div class="company-name">ACCEX SUPPLY CHAIN PRIVATE LIMITED</div>
+                        <div class="company-details-row">FLAT NO.07 FOURTH FLOOR, SHRI MANGAL COMPLEX</div>
+                        <div class="company-details-row">1887/2, Taluka Parvati, Sai Village</div>
+                        <div class="company-details-row">Pimpri, Maharashtra - 411058</div>
+                        
+                        <div class="company-details-table">
+                            <div class="details-row">
+                                <div class="details-label">PAN:</div>
+                                <div class="details-value">AAGCX9774J</div>
+                            </div>
+                            <div class="details-row">
+                                <div class="details-label">GSTIN:</div>
+                                <div class="details-value">27AAGCX9774J2ZA</div>
+                            </div>
+                            <div class="details-row">
+                                <div class="details-label">CIN:</div>
+                                <div class="details-value">U63090MH2017PTC290994</div>
+                            </div>
+                            <div class="details-row">
+                                <div class="details-label">IEC Certificate No.:</div>
+                                <div class="details-value">AAGCX9774J</div>
+                            </div>
+                            <div class="details-row">
+                                <div class="details-label">MSME (Udyam Registration No.):</div>
+                                <div class="details-value">UDYAM-MH-33-0142947</div>
+                            </div>
                         </div>
                     </div>
                 </div>
                 
-                <!-- Bill To Section -->
-                <div class="bill-to-section">
-                    <h3>Bill To / Ship To</h3>
-                    <div class="bill-to-content">
-                        <div class="bill-to-item">
-                            <strong>Bill To Party:</strong>
-                            <span>${invoice.company_name || 'N/A'}</span>
-                            <span>${invoice.contact_person || ''}</span>
-                            <span>${invoice.address || ''}</span>
-                            <span>GSTIN: ${invoice.gstin || 'N/A'}</span>
+                <div class="invoice-title">TAX INVOICE</div>
+            
+                <!-- Customer and Invoice Details -->
+                <div class="invoice-details-section">
+                    <div class="customer-details">
+                        <div class="section-title">Customer Details:</div>
+                        <div class="details-row">
+                            <div class="details-label">Bill to:</div>
+                            <div class="details-value">${invoice.company_name || 'DHARMASHAKTI ASIA SERVICES LIMITED'}</div>
                         </div>
-                        <div class="bill-to-item">
-                            <strong>Ship To Party:</strong>
-                            <span>${invoice.company_name || 'N/A'}</span>
-                            <span>${invoice.contact_person || ''}</span>
-                            <span>${invoice.address || ''}</span>
-                            <span>GSTIN: ${invoice.gstin || 'N/A'}</span>
+                        <div class="details-row">
+                            <div class="details-label">Address:</div>
+                            <div class="details-value">${invoice.address || 'FLAT NO. 1, BUILDING NO. 1, PRIME RESIDENCY ROAD, HIDC VASHI, NAVI MUMBAI - 400705 INDIA'}</div>
+                        </div>
+                        <div class="details-row">
+                            <div class="details-label">GSTIN:</div>
+                            <div class="details-value">${invoice.gstin || '27AABCD1234E1ZB'}</div>
+                        </div>
+                    </div>
+                    <div class="invoice-details">
+                        <div class="section-title">Invoice Details:</div>
+                        <div class="details-row">
+                            <div class="details-label">Invoice No.:</div>
+                            <div class="details-value">${invoice.invoice_no || 'ACC22Q4M22C274'}</div>
+                        </div>
+                        <div class="details-row">
+                            <div class="details-label">Invoice Date:</div>
+                            <div class="details-value">${invoice.invoice_date || '01-Nov-2023'}</div>
+                        </div>
+                        <div class="details-row">
+                            <div class="details-label">PO Number:</div>
+                            <div class="details-value">${invoice.po_number || 'PO-123456'}</div>
+                        </div>
+                        <div class="details-row">
+                            <div class="details-label">Place of Supply:</div>
+                            <div class="details-value">${invoice.place_of_supply || 'Maharashtra'}</div>
+                        </div>
+                        <div class="details-row">
+                            <div class="details-label">State Code:</div>
+                            <div class="details-value">${invoice.state_code || '27'}</div>
+                        </div>
+                        <div class="details-row">
+                            <div class="details-label">Reverse Charge:</div>
+                            <div class="details-value">${invoice.reverse_charge || 'No'}</div>
+                        </div>
+                        <div class="details-row">
+                            <div class="details-label">E-Reference #:</div>
+                            <div class="details-value">${invoice.e_reference || 'E-00291NEW'}</div>
                         </div>
                     </div>
                 </div>
@@ -708,99 +725,215 @@ function displayInvoiceModal(data) {
                 <table class="invoice-table">
                     <thead>
                         <tr>
-                            <th>Sl No</th>
-                            <th>Description of Service</th>
+                            <th>Description of Services</th>
                             <th>UOM</th>
-                            <th>Quantity</th>
-                            <th>Rate</th>
-                            <th>Currency</th>
-                            <th>Amount</th>
-                            <th>FX Rate</th>
-                            <th>Amount ($)</th>
+                            <th>QUANTITY</th>
+                            <th>RATE</th>
+                            <th>CUR</th>
+                            <th>AMOUNT</th>
+                            <th>FX RATE</th>
+                            <th>AMOUNT (₹)</th>
                         </tr>
                     </thead>
                     <tbody>
-                        ${items.map((item, index) => `
-                            <tr>
-                                <td>${index + 1}</td>
-                                <td>${item.description}</td>
-                                <td>${item.uom}</td>
-                                <td>${item.quantity}</td>
-                                <td>${parseFloat(item.rate).toFixed(2)}</td>
-                                <td>${item.currency}</td>
-                                <td>${parseFloat(item.amount).toFixed(2)}</td>
-                                <td>${parseFloat(item.fx_rate).toFixed(2)}</td>
-                                <td>$${parseFloat(item.amount_usd).toFixed(2)}</td>
-                            </tr>
-                        `).join('')}
+                        <tr>
+                            <td>Warehousing & Logistics Services<br>AWB - 99672P</td>
+                            <td>-</td>
+                            <td>-</td>
+                            <td>-</td>
+                            <td>-</td>
+                            <td>-</td>
+                            <td>-</td>
+                            <td>81.90</td>
+                        </tr>
+                        <tr>
+                            <td>AMC 221</td>
+                            <td>BOE #</td>
+                            <td>2058415</td>
+                            <td>-</td>
+                            <td>INR</td>
+                            <td>-</td>
+                            <td>-</td>
+                            <td>81.90</td>
+                        </tr>
+                        <tr>
+                            <td>Agency Charges</td>
+                            <td>BOE</td>
+                            <td>1.00</td>
+                            <td>-</td>
+                            <td>INR</td>
+                            <td>-</td>
+                            <td>-</td>
+                            <td>81.90</td>
+                        </tr>
+                        <tr>
+                            <td>Outbound Handling at FTWZ</td>
+                            <td>PKG</td>
+                            <td>2.00</td>
+                            <td>-</td>
+                            <td>USD</td>
+                            <td>-</td>
+                            <td>-</td>
+                            <td>1.00</td>
+                        </tr>
+                        <tr>
+                            <td>Transportation Charges</td>
+                            <td>VEH</td>
+                            <td>1.00</td>
+                            <td>-</td>
+                            <td>INR</td>
+                            <td>-</td>
+                            <td>-</td>
+                            <td>81.90</td>
+                        </tr>
+                        <tr>
+                            <td>Documentation Charges</td>
+                            <td>DOC</td>
+                            <td>1.00</td>
+                            <td>-</td>
+                            <td>INR</td>
+                            <td>-</td>
+                            <td>-</td>
+                            <td>81.90</td>
+                        </tr>
+                        <tr>
+                            <td>CFS Certificate</td>
+                            <td>BOE</td>
+                            <td>1.00</td>
+                            <td>-</td>
+                            <td>INR</td>
+                            <td>-</td>
+                            <td>-</td>
+                            <td>81.90</td>
+                        </tr>
+                        <tr>
+                            <td>Misc. Handling & Reporting</td>
+                            <td>BOE</td>
+                            <td>1.00</td>
+                            <td>-</td>
+                            <td>INR</td>
+                            <td>-</td>
+                            <td>-</td>
+                            <td>81.90</td>
+                        </tr>
+                        <tr>
+                            <td>Bank Charges - OOC</td>
+                            <td>BOE</td>
+                            <td>1.00</td>
+                            <td>-</td>
+                            <td>INR</td>
+                            <td>-</td>
+                            <td>-</td>
+                            <td>81.90</td>
+                        </tr>
+                        <tr>
+                            <td colspan="7" class="text-right">* Over Dimension Cargo (ODC)</td>
+                            <td>-</td>
+                        </tr>
+                        <tr>
+                            <td colspan="7" class="text-right">Packing List (DOC)</td>
+                            <td>-</td>
+                        </tr>
+                        <tr>
+                            <td colspan="7" class="text-right">GST on Int'l</td>
+                            <td>0.00</td>
+                        </tr>
+                        <tr>
+                            <td colspan="7" class="text-right">GST on Int'l</td>
+                            <td>0.00</td>
+                        </tr>
+                        <tr>
+                            <td colspan="7" class="text-right">TOTAL</td>
+                            <td>0.00 USD</td>
+                        </tr>
                     </tbody>
                 </table>
                 
-                <!-- Tax Summary -->
-                <div class="invoice-summary">
-                    <div class="tax-summary">
-                        <h3>Tax Summary</h3>
-                        <table class="tax-table">
-                            <thead>
-                                <tr>
-                                    <th>FX Rate</th>
-                                    <th>HSN/SAC</th>
-                                    <th>IGST %</th>
-                                    <th>Taxable ($)</th>
-                                    <th>Taxable (₹)</th>
-                                    <th>IGST ($)</th>
-                                    <th>IGST (₹)</th>
-                                    <th>Total (₹)</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                ${items.map(item => `
-                                    <tr>
-                                        <td>${parseFloat(item.fx_rate).toFixed(2)}</td>
-                                        <td>${item.hsn_sac}</td>
-                                        <td>${parseFloat(item.igst_percent).toFixed(2)}%</td>
-                                        <td>$${parseFloat(item.taxable_amount_usd).toFixed(2)}</td>
-                                        <td>₹${parseFloat(item.taxable_amount_inr).toFixed(2)}</td>
-                                        <td>$${parseFloat(item.igst_usd).toFixed(2)}</td>
-                                        <td>₹${parseFloat(item.igst_inr).toFixed(2)}</td>
-                                        <td>₹${(parseFloat(item.taxable_amount_inr) + parseFloat(item.igst_inr)).toFixed(2)}</td>
-                                    </tr>
-                                `).join('')}
-                            </tbody>
-                        </table>
-                    </div>
+                <div class="gst-note">* All Rates are being considered without GST</div>
+                
+                <div class="total-value-section">
+                    <div>Total Bill Value (USD)</div>
+                    <div>INR${parseFloat(invoice.total_amount_inr || 0).toFixed(2)}</div>
                 </div>
                 
-                <!-- Totals -->
-                <div class="total-section">
-                    <div class="total-row">
-                        <span>Total Bill Value (USD):</span>
-                        <span>$${parseFloat(invoice.total_amount_usd).toFixed(2)}</span>
-                    </div>
-                    <div class="total-row">
-                        <span>Total Bill Value (INR):</span>
-                        <span>₹${parseFloat(invoice.total_amount_inr).toFixed(2)}</span>
-                    </div>
-                    <div class="total-row total-final">
-                        <span>Total Invoice Amount (INR):</span>
-                        <span>₹${parseFloat(invoice.total_amount_inr).toFixed(2)}</span>
-                    </div>
+                <div class="tax-summary-section">
+                    <table class="tax-table">
+                        <thead>
+                            <tr>
+                                <th>FX Rate</th>
+                                <th>HSN / SAC</th>
+                                <th>IGST %</th>
+                                <th>Taxable (₹)</th>
+                                <th>Taxable ($)</th>
+                                <th>IGST (₹)</th>
+                                <th>IGST ($)</th>
+                                <th>Total (₹)</th>
+                                <th>Total ($)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>81.90</td>
+                                <td>996729</td>
+                                <td>18.00%</td>
+                                <td>-</td>
+                                <td>-</td>
+                                <td>-</td>
+                                <td>-</td>
+                                <td>-</td>
+                                <td>-</td>
+                            </tr>
+                            <tr class="total-row">
+                                <td>TOTAL</td>
+                                <td></td>
+                                <td></td>
+                                <td>-</td>
+                                <td>-</td>
+                                <td>-</td>
+                                <td>-</td>
+                                <td>-</td>
+                                <td>-</td>
+                            </tr>
+                        </tbody>
+                    </table>
                 </div>
                 
-                <!-- Declaration -->
-                <div class="declaration">
-                    <p><strong>Declaration:</strong> We declare that this invoice shows the actual price of the services described and that all particulars are true and correct.</p>
-                </div>
-                
-                <!-- Signature -->
-                <div class="signature-section">
-                    <div class="signature-box">
-                        <div class="signature-line"></div>
-                        <span>Authorized Signatory</span>
+                <div class="invoice-footer">
+                    <div class="declaration">
+                        <p>In words of Zero rupees only / custom please do not treat it as paid until 3 days of receipt of this invoice to your account and keep billing of invoice submitted for your account and keep billing.</p>
                     </div>
-                    <div class="signature-box">
-                        <div class="signature-line"></div>
-                        <span>For ACCEX Supply Chain Private Limited</span>
+                    
+                    <div class="bank-details">
+                        <div class="section-title">Our Bank Details for payment:</div>
+                        <div class="bank-info">
+                            <div class="bank-row">
+                                <div class="bank-label">Bank:</div>
+                                <div class="bank-value">ICICI Bank</div>
+                            </div>
+                            <div class="bank-row">
+                                <div class="bank-label">Branch:</div>
+                                <div class="bank-value">Andheri</div>
+                            </div>
+                            <div class="bank-row">
+                                <div class="bank-label">A/c No.:</div>
+                                <div class="bank-value">000000000000</div>
+                            </div>
+                            <div class="bank-row">
+                                <div class="bank-label">Account Name:</div>
+                                <div class="bank-value">ACCEX SUPPLY CHAIN PRIVATE LIMITED</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="signature-section">
+                        <div class="signature-box">
+                            <div class="signature-line"></div>
+                            <div>Authorized Signature</div>
+                        </div>
+                    </div>
+                    
+                    <div class="registered-office">
+                        Registered Office: 503, First Floor, Satellite Plaza, Saki Vihar Road, Powai, Mumbai - 400072
                     </div>
                 </div>
             </div>
@@ -845,11 +978,12 @@ function downloadInvoicePDF(invoiceId) {
                     margin: 0;
                     padding: 20px;
                     background-color: white;
+                    font-size: 12px;
                 }
                 .invoice-container {
                     max-width: 800px;
                     margin: 0 auto;
-                    padding: 30px;
+                    padding: 20px;
                     border: 1px solid #e2e8f0;
                     background-color: white;
                 }
@@ -859,70 +993,80 @@ function downloadInvoicePDF(invoiceId) {
                     margin: 15px 0;
                 }
                 th, td {
-                    padding: 10px;
+                    padding: 8px;
                     text-align: left;
-                    border-bottom: 1px solid #e2e8f0;
+                    border: 1px solid #000;
                 }
                 th {
                     background-color: #f7fafc;
                     font-weight: 600;
+                    text-align: center;
                 }
                 .invoice-header-print {
-                    text-align: center;
-                    margin-bottom: 20px;
+                    display: flex;
+                    justify-content: space-between;
+                    margin-bottom: 10px;
+                    border: 2px solid #000;
+                    padding: 10px;
+                }
+                .header-left {
+                    width: 100px;
+                }
+                .company-logo-img {
+                    max-width: 100px;
+                    height: auto;
+                }
+                .header-right {
+                    flex: 1;
+                    padding-left: 20px;
                 }
                 .company-name {
-                    font-size: 1.5rem;
+                    font-size: 16px;
                     font-weight: 700;
-                    color: #1e293b;
+                    color: #000;
                     margin-bottom: 5px;
                 }
-                .company-address {
-                    color: #475569;
-                    font-size: 0.875rem;
-                    margin-bottom: 5px;
+                .company-details-row {
+                    font-size: 12px;
+                    margin-bottom: 3px;
+                }
+                .company-details-table {
+                    display: grid;
+                    grid-template-columns: auto auto;
+                    gap: 5px;
+                    margin-top: 5px;
+                }
+                .details-row {
+                    display: flex;
+                    margin-bottom: 3px;
+                }
+                .details-label {
+                    font-weight: 600;
+                    min-width: 120px;
+                    padding-right: 10px;
+                }
+                .details-value {
+                    flex: 1;
                 }
                 .invoice-title {
                     text-align: center;
-                    font-size: 1.25rem;
+                    font-size: 16px;
                     font-weight: 700;
                     margin: 20px 0;
-                    color: #2563eb;
                     text-transform: uppercase;
-                    border-bottom: 2px solid #2563eb;
-                    padding-bottom: 10px;
                 }
-                .invoice-details-print {
+                .invoice-details-section {
                     display: flex;
                     justify-content: space-between;
                     margin-bottom: 20px;
+                    border: 1px solid #000;
+                    padding: 10px;
                 }
-                .invoice-info {
+                .customer-details, .invoice-details {
                     flex: 1;
                 }
-                .invoice-info-row {
-                    margin-bottom: 5px;
-                }
-                .invoice-info-label {
+                .section-title {
                     font-weight: 600;
-                }
-                .bill-to-section {
-                    margin-bottom: 20px;
-                }
-                .bill-to-section h3 {
-                    font-size: 1rem;
-                    margin-bottom: 10px;
-                }
-                .bill-to-content {
-                    display: flex;
-                    gap: 20px;
-                }
-                .bill-to-item {
-                    flex: 1;
-                    display: flex;
-                    flex-direction: column;
-                }
-                .bill-to-item strong {
                     margin-bottom: 5px;
                 }
                 .invoice-table {
@@ -930,52 +1074,76 @@ function downloadInvoicePDF(invoiceId) {
                     border-collapse: collapse;
                 }
                 .invoice-table th, .invoice-table td {
-                    border: 1px solid #e2e8f0;
-                    padding: 8px;
-                    text-align: left;
+                    border: 1px solid #000;
+                    padding: 5px;
+                    font-size: 11px;
                 }
                 .invoice-table th {
-                    background-color: #f7fafc;
+                    background-color: #f0f0f0;
+                    text-align: center;
                 }
-                .tax-summary {
+                .text-right {
+                    text-align: right;
+                    font-weight: bold;
+                }
+                .gst-note {
+                    font-size: 10px;
+                    margin: 5px 0;
+                    text-align: right;
+                    font-style: italic;
+                }
+                .total-value-section {
+                    display: flex;
+                    justify-content: space-between;
+                    margin: 10px 0;
+                    font-weight: bold;
+                    border: 1px solid #000;
+                    padding: 5px 10px;
+                }
+                .tax-summary-section {
                     margin: 20px 0;
-                }
-                .tax-summary h3 {
-                    font-size: 1rem;
-                    margin-bottom: 10px;
                 }
                 .tax-table {
                     width: 100%;
                     border-collapse: collapse;
                 }
                 .tax-table th, .tax-table td {
-                    border: 1px solid #e2e8f0;
-                    padding: 8px;
+                    border: 1px solid #000;
+                    padding: 5px;
                     text-align: center;
+                    font-size: 11px;
                 }
-                .total-section {
+                .tax-table .total-row {
+                    font-weight: bold;
+                }
+                .invoice-footer {
                     margin-top: 20px;
                 }
-                .total-row {
-                    display: flex;
-                    justify-content: space-between;
-                    padding: 5px 0;
-                }
-                .total-final {
-                    font-weight: bold;
-                    font-size: 1.1em;
-                    border-top: 1px solid #e2e8f0;
-                    padding-top: 10px;
-                    margin-top: 10px;
-                }
                 .declaration {
-                    margin: 20px 0;
-                    font-size: 0.9em;
+                    font-size: 10px;
+                    margin: 10px 0;
+                }
+                .bank-details {
+                    border: 1px solid #000;
+                    padding: 10px;
+                    margin: 10px 0;
+                }
+                .bank-info {
+                    display: grid;
+                    grid-template-columns: repeat(2, 1fr);
+                    gap: 5px;
+                }
+                .bank-row {
+                    display: flex;
+                }
+                .bank-label {
+                    font-weight: 600;
+                    min-width: 80px;
                 }
                 .signature-section {
-                    margin-top: 50px;
+                    margin-top: 30px;
                     display: flex;
-                    justify-content: space-between;
+                    justify-content: flex-end;
                 }
                 .signature-box {
                     text-align: center;
@@ -984,6 +1152,11 @@ function downloadInvoicePDF(invoiceId) {
                     width: 200px;
                     border-top: 1px solid #000;
                     margin-bottom: 5px;
+                }
+                .registered-office {
+                    font-size: 9px;
+                    text-align: center;
+                    margin-top: 20px;
                 }
                 .modal-actions {
                     display: none;
