@@ -205,10 +205,12 @@
                             <div class="form-row">
                                 <div class="form-col">
                                     <div class="form-group">
-                                        <label for="customerSelect">Customer</label>
-                                        <select id="customerSelect" name="customer_id" required>
-                                            <option value="">Select Customer</option>
-                                        </select>
+                                        <label for="billToSearch">Bill To (Search by Company Name or GSTIN)</label>
+                                        <div class="search-container">
+                                            <input type="text" id="billToSearch" placeholder="Type company name or GSTIN number..." autocomplete="off">
+                                            <div id="billToSearchResults" class="dropdown-results hidden"></div>
+                                        </div>
+                                        <input type="hidden" id="customerSelect" name="customer_id" required>
                                     </div>
                                 </div>
                                 

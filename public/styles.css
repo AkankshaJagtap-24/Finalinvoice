@@ -18,9 +18,24 @@ body {
     display: none !important;
 }
 
-/* GSTIN Search Styles */
+/* Enhanced Bill To Search Styles */
 .search-container {
     position: relative;
+}
+
+.search-container input {
+    width: 100%;
+    padding: 12px 16px;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    font-size: 14px;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.search-container input:focus {
+    outline: none;
+    border-color: #3182ce;
+    box-shadow: 0 0 0 3px rgba(49, 130, 206, 0.1);
 }
 
 .dropdown-results {
@@ -32,10 +47,10 @@ body {
     border: 1px solid #e2e8f0;
     border-radius: 8px;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-    max-height: 200px;
+    max-height: 250px;
     overflow-y: auto;
-    z-index: 100;
-    display: none;
+    z-index: 1000;
+    margin-top: 4px;
 }
 
 .dropdown-results.show {
@@ -43,7 +58,7 @@ body {
 }
 
 .search-result-item {
-    padding: 10px 15px;
+    padding: 12px 16px;
     cursor: pointer;
     border-bottom: 1px solid #f1f5f9;
     transition: background 0.2s ease;
@@ -57,15 +72,48 @@ body {
     border-bottom: none;
 }
 
+.search-result-item.selected {
+    background: #ebf8ff;
+    border-left: 3px solid #3182ce;
+}
+
 .company-name {
     font-weight: 600;
     color: #2d3748;
-    margin-bottom: 2px;
+    margin-bottom: 4px;
+    font-size: 14px;
 }
 
 .company-gstin {
-    font-size: 0.85rem;
+    font-size: 12px;
     color: #718096;
+    font-weight: 500;
+}
+
+.company-address {
+    font-size: 11px;
+    color: #a0aec0;
+    margin-top: 2px;
+}
+
+.search-type-indicator {
+    display: inline-block;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    margin-left: 8px;
+}
+
+.search-type-company {
+    background: #e6fffa;
+    color: #319795;
+}
+
+.search-type-gstin {
+    background: #fef5e7;
+    color: #d69e2e;
 }
 
 /* Login Page */

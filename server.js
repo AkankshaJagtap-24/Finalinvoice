@@ -35,9 +35,10 @@ db.serialize(() => {
     // Users table
     db.run(`CREATE TABLE IF NOT EXISTS users (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL,
         email TEXT UNIQUE NOT NULL,
         password TEXT NOT NULL,
-        name TEXT NOT NULL,
+        role TEXT DEFAULT 'user',
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     )`);
 
@@ -45,11 +46,15 @@ db.serialize(() => {
     db.run(`CREATE TABLE IF NOT EXISTS customers (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         company_name TEXT NOT NULL,
-        contact_person TEXT,
-        address TEXT,
-        gstin TEXT,
+        gstin TEXT UNIQUE,
         boe TEXT,
         new_ton TEXT,
+        address TEXT,
+        contact_person TEXT,
+        phone TEXT,
+        email TEXT,
+        state_code TEXT,
+        state_name TEXT,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     )`);
 
@@ -58,84 +63,89 @@ db.serialize(() => {
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         shipment_type TEXT NOT NULL,
         shipment_subtype TEXT NOT NULL,
-        asc TEXT,
-        sh TEXT,
-        ref TEXT,
-        customer_id INTEGER,
-        cbm REAL,
-        odc TEXT,
+        asc_number TEXT,
+        sh_number TEXT,
+        ref_number TEXT,
+        customer_id INTEGER NOT NULL,
+        cbm REAL NOT NULL,
+        odc TEXT DEFAULT 'No',
         length REAL,
         breadth REAL,
         height REAL,
         packages INTEGER,
         status TEXT DEFAULT 'draft',
+        created_by INTEGER NOT NULL,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-        FOREIGN KEY (customer_id) REFERENCES customers (id)
+        FOREIGN KEY (customer_id) REFERENCES customers(id),
+        FOREIGN KEY (created_by) REFERENCES users(id)
     )`);
 
     // Invoices table
     db.run(`CREATE TABLE IF NOT EXISTS invoices (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
-        invoice_no TEXT UNIQUE NOT NULL,
-        shipment_id INTEGER,
-        invoice_date TEXT,
-        place_of_supply TEXT,
+        invoice_number TEXT UNIQUE NOT NULL,
+        shipment_id INTEGER NOT NULL,
+        customer_id INTEGER NOT NULL,
+        invoice_date DATE NOT NULL,
+        due_date DATE NOT NULL,
+        place_of_supply TEXT NOT NULL,
         gstin_recipient TEXT,
-        state TEXT,
-        state_code TEXT,
-        total_amount_usd REAL,
-        total_amount_inr REAL,
-        fx_rate REAL,
+        state TEXT NOT NULL,
+        state_code TEXT NOT NULL,
+        subtotal_usd REAL DEFAULT 0,
+        subtotal_inr REAL DEFAULT 0,
+        igst_amount_usd REAL DEFAULT 0,
+        igst_amount_inr REAL DEFAULT 0,
+        total_usd REAL DEFAULT 0,
+        total_inr REAL DEFAULT 0,
+        fx_rate REAL DEFAULT 83.5,
         status TEXT DEFAULT 'draft',
+        created_by INTEGER NOT NULL,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-        FOREIGN KEY (shipment_id) REFERENCES shipments (id)
+        FOREIGN KEY (shipment_id) REFERENCES shipments(id),
+        FOREIGN KEY (customer_id) REFERENCES customers(id),
+        FOREIGN KEY (created_by) REFERENCES users(id)
     )`);
 
     // Invoice items table
     db.run(`CREATE TABLE IF NOT EXISTS invoice_items (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
-        invoice_id INTEGER,
-        description TEXT,
-        uom TEXT,
-        quantity REAL,
-        rate REAL,
-        currency TEXT,
-        amount REAL,
-        fx_rate REAL,
-        amount_usd REAL,
+        invoice_id INTEGER NOT NULL,
+        description TEXT NOT NULL,
+        uom TEXT NOT NULL,
+        quantity REAL NOT NULL,
+        rate REAL NOT NULL,
+        currency TEXT NOT NULL,
+        fx_rate REAL DEFAULT 83.5,
+        amount_usd REAL DEFAULT 0,
+        amount_inr REAL DEFAULT 0,
         hsn_sac TEXT,
-        igst_percent REAL,
-        taxable_amount_usd REAL,
-        taxable_amount_inr REAL,
-        igst_usd REAL,
-        igst_inr REAL,
-        FOREIGN KEY (invoice_id) REFERENCES invoices (id)
+        igst_percent REAL DEFAULT 18,
+        igst_amount_usd REAL DEFAULT 0,
+        igst_amount_inr REAL DEFAULT 0,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (invoice_id) REFERENCES invoices(id)
     )`);
 
     // Insert default user
-    const defaultPassword = bcrypt.hashSync('admin123', 10);
-    db.run(`INSERT OR IGNORE INTO users (email, password, name) VALUES (?, ?, ?)`, 
-        ['admin@123.com', defaultPassword, 'Administrator']);
+    const hashedPassword = bcrypt.hashSync('admin', 10);
+    db.run(`INSERT OR IGNORE INTO users (name, email, password, role) VALUES (?, ?, ?, ?)`, 
+        ['Admin User', 'admin@123.com', hashedPassword, 'admin']);
 
     // Insert sample customers
-    db.run(`INSERT OR IGNORE INTO customers (company_name, contact_person, address, gstin, boe, new_ton) VALUES 
-        ('ABC Logistics Ltd', 'John Doe', '123 Business Park, Mumbai', '27AABCU9603R1ZN', 'BOE001', 'TON001'),
-        ('XYZ Freight Services', 'Jane Smith', '456 Industrial Area, Delhi', '07AABFX1234M1Z5', 'BOE002', 'TON002'),
-        ('Global Shipping Co', 'Mike Johnson', '789 Port Road, Chennai', '33AABGS5678N2Z9', 'BOE003', 'TON003'),
-        ('Reliance Industries Ltd', 'Mukesh Ambani', 'Maker Chambers IV, Mumbai', '27AAACR5055K1ZK', 'BOE004', 'TON004'),
-        ('Tata Consultancy Services', 'N Chandrasekaran', 'TCS House, Mumbai', '27AABCT3518Q1ZA', 'BOE005', 'TON005'),
-        ('Infosys Limited', 'Salil Parekh', 'Electronics City, Bangalore', '29AAACI4741P1ZX', 'BOE006', 'TON006'),
-        ('Wipro Limited', 'Thierry Delaporte', 'Doddakannelli, Bangalore', '29AAACW0764N1Z4', 'BOE007', 'TON007')`);
+    const sampleCustomers = [
+        ['Acme Corporation', '27AABCU9603R1ZN', 'BOE001234', 'NT001', '123 Business Street, New York, NY 10001, United States', 'John Smith', '+1-555-0123', 'john@acme.com', '27', 'Maharashtra'],
+        ['Tech Solutions Ltd', '27AATSL7890K2ZM', 'BOE005678', 'NT002', '456 Tech Avenue, San Francisco, CA 94105, United States', 'Sarah Johnson', '+1-555-0456', 'sarah@techsolutions.com', '27', 'Maharashtra'],
+        ['Global Inc', '27AAGIN4567L3ZN', 'BOE009012', 'NT003', '789 Global Plaza, London, EC1A 1BB, United Kingdom', 'Michael Brown', '+44-20-1234-5678', 'michael@globalinc.com', '27', 'Maharashtra'],
+        ['ABC Logistics', '27AAABL1234M4ZO', 'BOE013456', 'NT004', '321 Logistics Way, Mumbai, Maharashtra 400001', 'Priya Patel', '+91-22-1234-5678', 'priya@abclogistics.com', '27', 'Maharashtra'],
+        ['XYZ Manufacturing', '27AAXYZ5678N5ZP', 'BOE017890', 'NT005', '654 Factory Road, Pune, Maharashtra 411001', 'Rajesh Kumar', '+91-20-1234-5678', 'rajesh@xyzmanufacturing.com', '27', 'Maharashtra']
+    ];
 
-    // Insert sample shipment and invoice for demonstration
-    db.run(`INSERT OR IGNORE INTO shipments (shipment_type, shipment_subtype, asc, sh, ref, customer_id, cbm, odc, length, breadth, height, packages, status) VALUES 
-        ('Inbound', 'FC to FTWZ BOE', 'ASC001', 'SH001', 'REF001', 1, 10.5, 'Yes', 100, 80, 60, 5, 'completed')`);
+    sampleCustomers.forEach(customer => {
+        db.run(`INSERT OR IGNORE INTO customers (company_name, gstin, boe, new_ton, address, contact_person, phone, email, state_code, state_name) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, customer);
+    });
 
-    db.run(`INSERT OR IGNORE INTO invoices (invoice_no, shipment_id, invoice_date, place_of_supply, gstin_recipient, state, state_code, total_amount_usd, total_amount_inr, fx_rate, status) VALUES 
-        ('GCL/23-24/0034', 1, '01/04/2024', 'Maharashtra', '27AABCU9603R1ZN', 'Maharashtra', '27', 5200.00, 431600.00, 83.00, 'finalized')`);
-
-    db.run(`INSERT OR IGNORE INTO invoice_items (invoice_id, description, uom, quantity, rate, currency, amount, fx_rate, amount_usd, hsn_sac, igst_percent, taxable_amount_usd, taxable_amount_inr, igst_usd, igst_inr) VALUES 
-        (1, 'Freight Forwarding Services', 'Shipment', 1, 5200.00, 'USD', 5200.00, 83.00, 5200.00, '996511', 18.00, 5200.00, 431600.00, 936.00, 77688.00)`);
+    console.log('Default user: admin@123.com / admin');
 });
 
 // Authentication middleware
@@ -152,7 +162,7 @@ app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-// Login API
+// Demo Login API (works without database for demo)
 app.post('/api/login', (req, res) => {
     try {
         const { email, password } = req.body;
@@ -161,6 +171,23 @@ app.post('/api/login', (req, res) => {
             return res.status(400).json({ error: 'Email and password are required' });
         }
         
+        // Demo login - check against hardcoded credentials
+        if (email === 'admin@123.com' && password === 'admin') {
+            req.session.userId = 1;
+            req.session.userEmail = email;
+            req.session.userName = 'Admin User';
+            
+            return res.json({ 
+                success: true, 
+                user: { 
+                    id: 1, 
+                    email: email, 
+                    name: 'Admin User' 
+                } 
+            });
+        }
+        
+        // If not demo credentials, try database
         db.get('SELECT * FROM users WHERE email = ?', [email], (err, user) => {
             if (err) {
                 console.error('Database error:', err);
@@ -260,6 +287,77 @@ app.get('/api/customers', requireAuth, (req, res) => {
             return res.status(500).json({ error: 'Database error' });
         }
         res.json(customers);
+    });
+});
+
+// Enhanced customer search by company name or GSTIN
+app.get('/api/customers/search', requireAuth, (req, res) => {
+    const { query } = req.query;
+    
+    if (!query || query.trim().length < 2) {
+        return res.json([]);
+    }
+    
+    const searchTerm = `%${query.trim()}%`;
+    
+    // Search by both company name and GSTIN
+    const sql = `
+        SELECT * FROM customers 
+        WHERE company_name LIKE ? OR gstin LIKE ? 
+        ORDER BY 
+            CASE 
+                WHEN company_name LIKE ? THEN 1
+                WHEN gstin LIKE ? THEN 2
+                ELSE 3
+            END,
+            company_name
+        LIMIT 10
+    `;
+    
+    db.all(sql, [searchTerm, searchTerm, searchTerm, searchTerm], (err, customers) => {
+        if (err) {
+            console.error('Search error:', err);
+            return res.status(500).json({ error: 'Database error' });
+        }
+        res.json(customers);
+    });
+});
+
+// Enhanced customer search API
+app.get('/api/customers/search', requireAuth, (req, res) => {
+    const { query } = req.query;
+    
+    if (!query || query.trim().length < 2) {
+        return res.json([]);
+    }
+    
+    const searchQuery = query.trim();
+    const isGSTIN = /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/.test(searchQuery);
+    
+    let sql, params;
+    
+    if (isGSTIN) {
+        // Search by GSTIN
+        sql = `SELECT * FROM customers WHERE gstin LIKE ? ORDER BY company_name LIMIT 10`;
+        params = [`%${searchQuery}%`];
+    } else {
+        // Search by company name
+        sql = `SELECT * FROM customers WHERE company_name LIKE ? OR contact_person LIKE ? ORDER BY company_name LIMIT 10`;
+        params = [`%${searchQuery}%`, `%${searchQuery}%`];
+    }
+    
+    db.all(sql, params, (err, customers) => {
+        if (err) {
+            return res.status(500).json({ error: 'Database error' });
+        }
+        
+        // Add search type indicator to each result
+        const results = customers.map(customer => ({
+            ...customer,
+            searchType: isGSTIN ? 'gstin' : 'company'
+        }));
+        
+        res.json(results);
     });
 });
 

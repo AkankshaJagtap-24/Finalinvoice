@@ -172,32 +172,24 @@ async function handleLogin(e) {
     
     showLoading();
     
-    try {
-        const response = await fetch('/api/login', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            credentials: 'include',
-            body: JSON.stringify({ email, password })
-        });
-        
-        const data = await response.json();
-        
-        if (response.ok) {
-            currentUser = data.user;
+    // Demo login without API
+    setTimeout(() => {
+        if (email === 'admin@123.com' && password === 'admin123') {
+            currentUser = {
+                id: 1,
+                email: email,
+                name: 'Administrator'
+            };
+            // Store user in localStorage for demo persistence
+            localStorage.setItem('demoUser', JSON.stringify(currentUser));
             showToast('Login successful!', 'success');
             showDashboard();
             loadDashboardData();
         } else {
-            showToast(data.error || 'Login failed', 'error');
+            showToast('Invalid credentials. Use admin@123.com / admin123', 'error');
         }
-    } catch (error) {
-        console.error('Login error:', error);
-        showToast('Login failed. Please try again.', 'error');
-    } finally {
         hideLoading();
-    }
+    }, 1000);
 }
 
 async function handleSignup(e) {
@@ -262,17 +254,11 @@ function showLoginForm() {
 }
 
 async function handleLogout() {
-    try {
-        await fetch('/api/logout', { 
-            method: 'POST',
-            credentials: 'include'
-        });
-        currentUser = null;
-        showLoginPage();
-        showToast('Logged out successfully', 'info');
-    } catch (error) {
-        console.error('Logout error:', error);
-    }
+    // Demo logout - clear localStorage
+    localStorage.removeItem('demoUser');
+    currentUser = null;
+    showLoginPage();
+    showToast('Logged out successfully', 'info');
 }
 
 // Navigation functions
@@ -371,7 +357,7 @@ async function loadCustomers() {
         if (response.ok) {
             customers = await response.json();
             populateCustomerSelect();
-            setupGstinSearch();
+            setupBillToSearch();
         }
     } catch (error) {
         console.error('Error loading customers:', error);
@@ -389,53 +375,163 @@ function populateCustomerSelect() {
     });
 }
 
-function setupGstinSearch() {
-    const gstinSearch = document.getElementById('gstinSearch');
-    const gstinSearchResults = document.getElementById('gstinSearchResults');
+function setupBillToSearch() {
+    const billToSearch = document.getElementById('billToSearch');
+    const billToSearchResults = document.getElementById('billToSearchResults');
     
-    if (!gstinSearch || !gstinSearchResults) return;
+    if (!billToSearch || !billToSearchResults) return;
     
-    gstinSearch.addEventListener('input', function() {
-        const searchTerm = this.value.toLowerCase();
+    let searchTimeout;
+    
+    billToSearch.addEventListener('input', function() {
+        const searchTerm = this.value.trim();
+        
+        // Clear previous timeout
+        clearTimeout(searchTimeout);
+        
         if (searchTerm.length < 2) {
-            gstinSearchResults.classList.remove('show');
+            billToSearchResults.classList.add('hidden');
             return;
         }
         
-        const filteredCustomers = customers.filter(customer => 
-            customer.company_name.toLowerCase().includes(searchTerm) || 
-            (customer.gstin && customer.gstin.toLowerCase().includes(searchTerm))
-        );
-        
-        if (filteredCustomers.length > 0) {
-            gstinSearchResults.innerHTML = '';
-            filteredCustomers.forEach(customer => {
-                const resultItem = document.createElement('div');
-                resultItem.className = 'search-result-item';
-                resultItem.innerHTML = `
-                    <div class="company-name">${customer.company_name}</div>
-                    <div class="company-gstin">${customer.gstin || 'No GSTIN'}</div>
-                `;
-                resultItem.addEventListener('click', () => {
-                    selectCustomerFromSearch(customer);
-                    gstinSearchResults.classList.remove('show');
-                    gstinSearch.value = '';
+        // Debounce search to avoid too many API calls
+        searchTimeout = setTimeout(async () => {
+            try {
+                const response = await fetch(`/api/customers/search?query=${encodeURIComponent(searchTerm)}`, {
+                    credentials: 'include'
                 });
-                gstinSearchResults.appendChild(resultItem);
-            });
-            gstinSearchResults.classList.add('show');
-        } else {
-            gstinSearchResults.innerHTML = '<div class="search-result-item">No matching companies found</div>';
-            gstinSearchResults.classList.add('show');
+                
+                if (response.ok) {
+                    const customers = await response.json();
+                    displaySearchResults(customers, searchTerm);
+                } else {
+                    console.error('Search failed');
+                }
+            } catch (error) {
+                console.error('Search error:', error);
+            }
+        }, 300);
+    });
+    
+    // Handle keyboard navigation
+    let selectedIndex = -1;
+    billToSearch.addEventListener('keydown', function(e) {
+        const items = billToSearchResults.querySelectorAll('.search-result-item');
+        
+        if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            selectedIndex = Math.min(selectedIndex + 1, items.length - 1);
+            updateSelection(items, selectedIndex);
+        } else if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            selectedIndex = Math.max(selectedIndex - 1, -1);
+            updateSelection(items, selectedIndex);
+        } else if (e.key === 'Enter') {
+            e.preventDefault();
+            if (selectedIndex >= 0 && items[selectedIndex]) {
+                items[selectedIndex].click();
+            }
+        } else if (e.key === 'Escape') {
+            billToSearchResults.classList.add('hidden');
+            selectedIndex = -1;
         }
     });
     
     // Close dropdown when clicking outside
     document.addEventListener('click', function(e) {
-        if (!gstinSearch.contains(e.target) && !gstinSearchResults.contains(e.target)) {
-            gstinSearchResults.classList.remove('show');
+        if (!billToSearch.contains(e.target) && !billToSearchResults.contains(e.target)) {
+            billToSearchResults.classList.add('hidden');
+            selectedIndex = -1;
         }
     });
+}
+
+function displaySearchResults(customers, searchTerm) {
+    const billToSearchResults = document.getElementById('billToSearchResults');
+    const billToSearch = document.getElementById('billToSearch');
+    
+    if (customers.length === 0) {
+        billToSearchResults.innerHTML = `
+            <div class="search-result-item">
+                <div class="company-name">No matching companies found</div>
+                <div class="company-gstin">Try a different search term</div>
+            </div>
+        `;
+        billToSearchResults.classList.remove('hidden');
+        return;
+    }
+    
+    billToSearchResults.innerHTML = '';
+    
+    customers.forEach(customer => {
+        const resultItem = document.createElement('div');
+        resultItem.className = 'search-result-item';
+        
+        const isGSTIN = /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/.test(searchTerm);
+        const searchType = isGSTIN ? 'gstin' : 'company';
+        
+        resultItem.innerHTML = `
+            <div class="company-name">
+                ${customer.company_name}
+                <span class="search-type-indicator search-type-${searchType}">${searchType}</span>
+            </div>
+            <div class="company-gstin">${customer.gstin || 'No GSTIN'}</div>
+            ${customer.address ? `<div class="company-address">${customer.address}</div>` : ''}
+        `;
+        
+        resultItem.addEventListener('click', () => {
+            selectCustomerFromBillToSearch(customer);
+            billToSearchResults.classList.add('hidden');
+        });
+        
+        resultItem.addEventListener('mouseenter', () => {
+            resultItem.classList.add('selected');
+        });
+        
+        resultItem.addEventListener('mouseleave', () => {
+            resultItem.classList.remove('selected');
+        });
+        
+        billToSearchResults.appendChild(resultItem);
+    });
+    
+    billToSearchResults.classList.remove('hidden');
+}
+
+function updateSelection(items, selectedIndex) {
+    items.forEach((item, index) => {
+        if (index === selectedIndex) {
+            item.classList.add('selected');
+        } else {
+            item.classList.remove('selected');
+        }
+    });
+}
+
+function selectCustomerFromBillToSearch(customer) {
+    const billToSearch = document.getElementById('billToSearch');
+    const customerSelect = document.getElementById('customerSelect');
+    const customerDetails = document.getElementById('customerDetails');
+    const customerGstin = document.getElementById('customerGstin');
+    const customerBoe = document.getElementById('customerBoe');
+    const customerNewTon = document.getElementById('customerNewTon');
+    
+    // Update search input to show selected company
+    billToSearch.value = customer.company_name;
+    
+    // Update hidden customer select
+    customerSelect.value = customer.id;
+    
+    // Show customer details section
+    customerDetails.classList.remove('hidden');
+    
+    // Update customer details fields
+    customerGstin.value = customer.gstin || '';
+    customerBoe.value = customer.boe || '';
+    customerNewTon.value = customer.new_ton || '';
+    
+    // Show success message
+    showToast(`Selected: ${customer.company_name}`, 'success');
 }
 
 function selectCustomerFromSearch(customer) {
