@@ -749,83 +749,86 @@ app.post('/api/shipments', (req, res) => {
         return res.status(400).json({ error: 'CBM must be greater than 0' });
     }
 
+    // Handle empty values for decimal columns
+    const lengthValue = length && length.trim() !== '' ? parseFloat(length) : null;
+    const breadthValue = breadth && breadth.trim() !== '' ? parseFloat(breadth) : null;
+    const heightValue = height && height.trim() !== '' ? parseFloat(height) : null;
+    const packagesValue = packages && packages.trim() !== '' ? parseInt(packages) : null;
+
     const sql = `INSERT INTO shipments (
         shipment_type, shipment_subtype, asc_number, sh_number, ref_number, customer_id,
         cbm, odc, length, breadth, height, packages, created_by
     ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
 
-    db.run(sql, [
+    db.query(sql, [
         shipment_type, shipment_subtype, asc_number, sh_number, ref_number, customer_id,
-        cbm, odc, length, breadth, height, packages, req.session.userId
-    ], function(err) {
+        cbm, odc, lengthValue, breadthValue, heightValue, packagesValue, 1
+    ], function(err, result) {
         if (err) {
             console.error('Shipment creation error:', err);
             return res.status(500).json({ error: 'Database error' });
         }
         
-        const shipmentId = this.lastID;
+        const shipmentId = result.insertId;
+        console.log('Shipment created with ID:', shipmentId);
         
         // Generate draft invoice with ACCEX format
-        const invoiceNo = `ASC${moment().format('YY')}${moment().format('MM')}${String(shipmentId).padStart(3, '0')}`;
-        const invoiceDate = moment().format('DD-MMM-YYYY');
-        const dueDate = moment().add(30, 'days').format('DD-MMM-YYYY');
-        const fxRate = 81.90; // Default FX rate as per image
+        const invoiceNo = `ACCEX/23-24/${String(shipmentId).padStart(4, '0')}`;
+        const invoiceDate = moment().format('YYYY-MM-DD');
+        const fxRate = 83.00; // Default FX rate
         
         // Calculate base amounts based on CBM
-        const baseAmountUSD = cbm * 100; // $100 per CBM
+        const baseAmountUSD = cbm * 34.67; // $34.67 per CBM (5200/150)
         const baseAmountINR = baseAmountUSD * fxRate;
+        const igstAmountUSD = baseAmountUSD * 0.18;
+        const igstAmountINR = baseAmountINR * 0.18;
+        const totalAmountUSD = baseAmountUSD + igstAmountUSD;
+        const totalAmountINR = baseAmountINR + igstAmountINR;
         
         // Create invoice with new schema
-        db.run(`INSERT INTO invoices (
+        const invoiceSql = `INSERT INTO invoices (
             invoice_number, shipment_id, customer_id, invoice_date, due_date,
             place_of_supply, gstin_recipient, state, state_code, 
             subtotal_usd, subtotal_inr, igst_amount_usd, igst_amount_inr,
             total_usd, total_inr, fx_rate, status, created_by
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, [
-            invoiceNo, shipmentId, customer_id, invoiceDate, dueDate,
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+        
+        db.query(invoiceSql, [
+            invoiceNo, shipmentId, customer_id, invoiceDate, invoiceDate,
             'Maharashtra', '', 'Maharashtra', '27',
-            baseAmountUSD, baseAmountINR, baseAmountUSD * 0.18, baseAmountINR * 0.18,
-            baseAmountUSD * 1.18, baseAmountINR * 1.18, fxRate, 'draft', req.session.userId
-        ], function(err) {
+            baseAmountUSD, baseAmountINR, igstAmountUSD, igstAmountINR,
+            totalAmountUSD, totalAmountINR, fxRate, 'draft', 1
+        ], function(err, result) {
             if (err) {
                 console.error('Invoice creation error:', err);
                 return res.status(500).json({ error: 'Invoice creation failed' });
             }
             
-            const invoiceId = this.lastID;
+            const invoiceId = result.insertId;
+            console.log('Invoice created with ID:', invoiceId);
             
             // Create invoice items based on shipment type
             const invoiceItems = [];
             
             if (shipment_type === 'Inbound') {
                 invoiceItems.push({
-                    description: 'Warehousing & Logistics Services',
-                    uom: 'SER',
+                    description: `Logistics Services - ${shipment_subtype}`,
+                    uom: 'Service',
                     quantity: 1.00,
                     rate: baseAmountUSD,
                     currency: 'USD',
-                    hsn_sac: '996729'
+                    hsn_sac: '998313'
                 });
             } else {
                 invoiceItems.push({
-                    description: 'Outbound Handling at FTWZ',
-                    uom: 'PKG',
-                    quantity: packages || 1,
-                    rate: baseAmountUSD / (packages || 1),
+                    description: `Outbound Services - ${shipment_subtype}`,
+                    uom: 'Service',
+                    quantity: 1.00,
+                    rate: baseAmountUSD,
                     currency: 'USD',
-                    hsn_sac: '996729'
+                    hsn_sac: '998313'
                 });
             }
-            
-            // Add additional services
-            invoiceItems.push({
-                description: 'Transportation Charges',
-                uom: 'VEH',
-                quantity: 1.00,
-                rate: 50.00,
-                currency: 'USD',
-                hsn_sac: '996729'
-            });
             
             // Insert invoice items
             let itemsInserted = 0;
@@ -835,30 +838,49 @@ app.post('/api/shipments', (req, res) => {
                 const igstUSD = amountUSD * 0.18;
                 const igstINR = amountINR * 0.18;
                 
-                db.run(`INSERT INTO invoice_items (
+                const itemSql = `INSERT INTO invoice_items (
                     invoice_id, description, uom, quantity, rate, currency,
-                    fx_rate, amount_usd, amount_inr, hsn_sac, igst_percent,
-                    igst_amount_usd, igst_amount_inr
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, [
+                    fx_rate, amount_usd, hsn_sac, igst_percentage, igst_amount_usd, igst_amount_inr
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+                
+                db.query(itemSql, [
                     invoiceId, item.description, item.uom, item.quantity, item.rate, item.currency,
-                    fxRate, amountUSD, amountINR, item.hsn_sac, 18.00, igstUSD, igstINR
-                ], function(err) {
+                    fxRate, amountUSD, item.hsn_sac, 18.00, igstUSD, igstINR
+                ], function(err, result) {
                     if (err) {
                         console.error('Invoice item creation error:', err);
+                    } else {
+                        itemsInserted++;
+                        console.log('Invoice item created:', itemsInserted);
                     }
                     
-                    itemsInserted++;
+                    // If all items are inserted, send response
                     if (itemsInserted === invoiceItems.length) {
                         res.json({ 
                             success: true, 
+                            message: 'Shipment created and draft invoice generated successfully!',
                             shipmentId: shipmentId,
-                            invoiceId: invoiceId,
-                            invoiceNo: invoiceNo,
-                            message: 'Shipment created and draft invoice generated successfully' 
+                            invoice: {
+                                id: invoiceId,
+                                invoice_number: invoiceNo
+                            }
                         });
                     }
                 });
             });
+            
+            // If no items to insert, send response immediately
+            if (invoiceItems.length === 0) {
+                res.json({ 
+                    success: true, 
+                    message: 'Shipment created and draft invoice generated successfully!',
+                    shipmentId: shipmentId,
+                    invoice: {
+                        id: invoiceId,
+                        invoice_number: invoiceNo
+                    }
+                });
+            }
         });
     });
 });

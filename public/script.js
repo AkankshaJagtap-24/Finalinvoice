@@ -170,6 +170,28 @@ function setupEventListeners() {
                     });
             });
         }
+        
+        // ODC field change handler
+        const odcField = document.getElementById('odc');
+        if (odcField) {
+            odcField.addEventListener('change', function() {
+                const dimensionFields = document.querySelectorAll('.dimension-field');
+                if (this.value === 'No') {
+                    dimensionFields.forEach(field => {
+                        field.classList.add('hidden');
+                        // Clear the values when hiding
+                        const input = field.querySelector('input');
+                        if (input) {
+                            input.value = '';
+                        }
+                    });
+                } else {
+                    dimensionFields.forEach(field => {
+                        field.classList.remove('hidden');
+                    });
+                }
+            });
+        }
     }
     
     // Invoice filter
@@ -789,6 +811,19 @@ async function handleShipmentSubmit(e) {
     
     if (shipmentData.height && parseFloat(shipmentData.height) <= 0) {
         errors.push({ field: 'height', message: 'Height must be greater than 0' });
+    }
+    
+    // Validate dimensions only if ODC is Yes
+    if (shipmentData.odc === 'Yes') {
+        if (!shipmentData.length || parseFloat(shipmentData.length) <= 0) {
+            errors.push({ field: 'length', message: 'Length is required when ODC is Yes' });
+        }
+        if (!shipmentData.breadth || parseFloat(shipmentData.breadth) <= 0) {
+            errors.push({ field: 'breadth', message: 'Breadth is required when ODC is Yes' });
+        }
+        if (!shipmentData.height || parseFloat(shipmentData.height) <= 0) {
+            errors.push({ field: 'height', message: 'Height is required when ODC is Yes' });
+        }
     }
     
     if (shipmentData.packages && parseInt(shipmentData.packages) <= 0) {
