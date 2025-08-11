@@ -99,36 +99,77 @@ function setupEventListeners() {
     const sidebarToggle = document.querySelector('.sidebar-toggle');
     if (sidebarToggle) {
         sidebarToggle.addEventListener('click', function() {
-            document.querySelector('.sidebar').classList.toggle('expanded');
+            document.querySelector('.sidebar').classList.toggle('collapsed');
         });
     }
     
-    // Shipment form
+    // Shipment form event listeners
     if (shipmentForm) {
         shipmentForm.addEventListener('submit', handleShipmentSubmit);
-    }
-    
-    // Shipment type change
-    if (shipmentType) {
-        shipmentType.addEventListener('change', handleShipmentTypeChange);
-    }
-    
-    // ODC field change
-    const odcField = document.getElementById('odc');
-    if (odcField) {
-        odcField.addEventListener('change', function() {
-            const dimensionFields = document.querySelectorAll('.dimension-field');
-            if (this.value === 'No') {
-                dimensionFields.forEach(field => field.classList.add('hidden'));
-            } else {
-                dimensionFields.forEach(field => field.classList.remove('hidden'));
-            }
+        
+        // Shipment type change
+        const shipmentTypeSelect = document.getElementById('shipment_type');
+        if (shipmentTypeSelect) {
+            shipmentTypeSelect.addEventListener('change', handleShipmentTypeChange);
+        }
+        
+        // Clear validation on input
+        const formInputs = shipmentForm.querySelectorAll('input, select');
+        formInputs.forEach(input => {
+            input.addEventListener('input', function() {
+                clearFieldValidation(this.id);
+            });
+            
+            input.addEventListener('change', function() {
+                clearFieldValidation(this.id);
+            });
         });
-    }
-    
-    // Customer selection
-    if (customerSelect) {
-        customerSelect.addEventListener('change', handleCustomerChange);
+        
+        // Test dropdown button
+        const testDropdownBtn = document.getElementById('testDropdown');
+        if (testDropdownBtn) {
+            testDropdownBtn.addEventListener('click', function() {
+                console.log('Test dropdown button clicked!');
+                const billToSearchResults = document.getElementById('billToSearchResults');
+                if (billToSearchResults) {
+                    billToSearchResults.classList.remove('hidden');
+                    billToSearchResults.innerHTML = `
+                        <div class="search-result-item">
+                            <div class="company-name">TEST CUSTOMER 1</div>
+                            <div class="company-gstin">TEST GSTIN 1</div>
+                        </div>
+                        <div class="search-result-item">
+                            <div class="company-name">TEST CUSTOMER 2</div>
+                            <div class="company-gstin">TEST GSTIN 2</div>
+                        </div>
+                    `;
+                    console.log('Test dropdown shown!');
+                } else {
+                    console.error('billToSearchResults element not found!');
+                }
+            });
+        }
+        
+        // Test search button
+        const testSearchBtn = document.getElementById('testSearch');
+        if (testSearchBtn) {
+            testSearchBtn.addEventListener('click', function() {
+                console.log('Test search button clicked!');
+                // Manually trigger a search for "RELIANCE"
+                fetch('/api/customers/search?query=RELIANCE')
+                    .then(response => {
+                        console.log('Test search response status:', response.status);
+                        return response.json();
+                    })
+                    .then(customers => {
+                        console.log('Test search found customers:', customers);
+                        showCustomerDropdown(customers, 'RELIANCE');
+                    })
+                    .catch(error => {
+                        console.error('Test search error:', error);
+                    });
+            });
+        }
     }
     
     // Invoice filter
@@ -136,18 +177,33 @@ function setupEventListeners() {
         invoiceFilter.addEventListener('change', handleInvoiceFilter);
     }
     
-    // Modal close
+    // Close invoice modal
     if (closeInvoiceModal) {
-        closeInvoiceModal.addEventListener('click', closeModal);
+        closeInvoiceModal.addEventListener('click', function() {
+            invoiceModal.classList.remove('show');
+        });
     }
     
-    // Close modal on outside click
-    if (invoiceModal) {
-        invoiceModal.addEventListener('click', function(e) {
-            if (e.target === invoiceModal) {
-                closeModal();
-            }
-        });
+    // Close modal when clicking outside
+    window.addEventListener('click', function(e) {
+        if (e.target === invoiceModal) {
+            invoiceModal.classList.remove('show');
+        }
+    });
+}
+
+// Function to clear validation for a specific field
+function clearFieldValidation(fieldName) {
+    const field = document.getElementById(fieldName);
+    if (!field) return;
+    
+    // Remove error styling
+    field.classList.remove('input-error');
+    
+    // Remove validation message
+    const validationMessage = field.parentNode.querySelector('.validation-message');
+    if (validationMessage) {
+        validationMessage.remove();
     }
 }
 
@@ -324,8 +380,8 @@ function showLoginPage() {
 
 // Shipment form functions
 function handleShipmentTypeChange() {
-    const type = shipmentType.value;
-    const subtypeSelect = shipmentSubtype;
+    const type = document.getElementById('shipment_type').value;
+    const subtypeSelect = document.getElementById('shipment_subtype');
     
     // Clear and disable subtype
     subtypeSelect.innerHTML = '<option value="">Select Shipment Type First</option>';
@@ -356,12 +412,112 @@ async function loadCustomers() {
         const response = await fetch('/api/customers');
         if (response.ok) {
             customers = await response.json();
+            console.log('Loaded customers:', customers);
             populateCustomerSelect();
             setupBillToSearch();
+            
+            // Test customer search immediately
+            testCustomerSearch();
+            
+            // Test dropdown visibility
+            testDropdownVisibility();
+            
+            // Test if elements exist
+            testElementsExist();
         }
     } catch (error) {
         console.error('Error loading customers:', error);
         showToast('Failed to load customers', 'error');
+    }
+}
+
+// Test function to verify customer search API
+async function testCustomerSearch() {
+    console.log('Testing customer search API...');
+    try {
+        const response = await fetch('/api/customers/search?query=RELIANCE');
+        console.log('Test API response status:', response.status);
+        
+        if (response.ok) {
+            const customers = await response.json();
+            console.log('Test API found customers:', customers);
+        } else {
+            console.error('Test API failed with status:', response.status);
+        }
+    } catch (error) {
+        console.error('Test API error:', error);
+    }
+}
+
+// Test function to check dropdown visibility
+function testDropdownVisibility() {
+    const billToSearch = document.getElementById('billToSearch');
+    const billToSearchResults = document.getElementById('billToSearchResults');
+    
+    console.log('=== DROPDOWN TEST ===');
+    console.log('billToSearch element:', billToSearch);
+    console.log('billToSearchResults element:', billToSearchResults);
+    
+    if (billToSearch && billToSearchResults) {
+        console.log('Both elements found!');
+        console.log('billToSearchResults classes:', billToSearchResults.className);
+        console.log('billToSearchResults display:', window.getComputedStyle(billToSearchResults).display);
+        
+        // Test showing dropdown
+        billToSearchResults.classList.remove('hidden');
+        console.log('After removing hidden class - display:', window.getComputedStyle(billToSearchResults).display);
+        
+        // Add test content
+        billToSearchResults.innerHTML = '<div class="search-result-item"><div class="company-name">TEST CUSTOMER</div><div class="company-gstin">TEST GSTIN</div></div>';
+        
+        // Test hiding dropdown
+        setTimeout(() => {
+            billToSearchResults.classList.add('hidden');
+            console.log('After adding hidden class - display:', window.getComputedStyle(billToSearchResults).display);
+        }, 3000);
+    } else {
+        console.error('Elements not found!');
+    }
+}
+
+// Test function to check if elements exist
+function testElementsExist() {
+    console.log('=== TESTING ELEMENTS ===');
+    
+    const billToSearch = document.getElementById('billToSearch');
+    const billToSearchResults = document.getElementById('billToSearchResults');
+    const testDropdownBtn = document.getElementById('testDropdown');
+    
+    console.log('billToSearch exists:', !!billToSearch);
+    console.log('billToSearchResults exists:', !!billToSearchResults);
+    console.log('testDropdownBtn exists:', !!testDropdownBtn);
+    
+    if (billToSearch && billToSearchResults) {
+        console.log('✅ All elements found!');
+        
+        // Test if we can show/hide dropdown
+        billToSearchResults.classList.remove('hidden');
+        console.log('Dropdown should be visible now');
+        
+        // Add test content
+        billToSearchResults.innerHTML = '<div class="search-result-item"><div class="company-name">TEST ELEMENT</div><div class="company-gstin">TEST GSTIN</div></div>';
+        
+        // Force display
+        billToSearchResults.style.display = 'block';
+        billToSearchResults.style.visibility = 'visible';
+        billToSearchResults.style.opacity = '1';
+        billToSearchResults.style.zIndex = '9999';
+        
+        console.log('Test dropdown forced to show');
+        
+        // Hide after 5 seconds
+        setTimeout(() => {
+            billToSearchResults.classList.add('hidden');
+            billToSearchResults.style.display = 'none';
+            console.log('Dropdown hidden');
+        }, 5000);
+    } else {
+        console.error('❌ Elements missing!');
     }
 }
 
@@ -376,139 +532,124 @@ function populateCustomerSelect() {
 }
 
 function setupBillToSearch() {
+    console.log('=== SETTING UP BILL TO SEARCH ===');
+    
     const billToSearch = document.getElementById('billToSearch');
     const billToSearchResults = document.getElementById('billToSearchResults');
     
-    if (!billToSearch || !billToSearchResults) return;
+    console.log('billToSearch:', billToSearch);
+    console.log('billToSearchResults:', billToSearchResults);
     
-    let searchTimeout;
-    
-    billToSearch.addEventListener('input', function() {
-        const searchTerm = this.value.trim();
-        
-        // Clear previous timeout
-        clearTimeout(searchTimeout);
-        
-        if (searchTerm.length < 2) {
-            billToSearchResults.classList.add('hidden');
-            return;
-        }
-        
-        // Debounce search to avoid too many API calls
-        searchTimeout = setTimeout(async () => {
-            try {
-                const response = await fetch(`/api/customers/search?query=${encodeURIComponent(searchTerm)}`, {
-                    credentials: 'include'
-                });
-                
-                if (response.ok) {
-                    const customers = await response.json();
-                    displaySearchResults(customers, searchTerm);
-                } else {
-                    console.error('Search failed');
-                }
-            } catch (error) {
-                console.error('Search error:', error);
-            }
-        }, 300);
-    });
-    
-    // Handle keyboard navigation
-    let selectedIndex = -1;
-    billToSearch.addEventListener('keydown', function(e) {
-        const items = billToSearchResults.querySelectorAll('.search-result-item');
-        
-        if (e.key === 'ArrowDown') {
-            e.preventDefault();
-            selectedIndex = Math.min(selectedIndex + 1, items.length - 1);
-            updateSelection(items, selectedIndex);
-        } else if (e.key === 'ArrowUp') {
-            e.preventDefault();
-            selectedIndex = Math.max(selectedIndex - 1, -1);
-            updateSelection(items, selectedIndex);
-        } else if (e.key === 'Enter') {
-            e.preventDefault();
-            if (selectedIndex >= 0 && items[selectedIndex]) {
-                items[selectedIndex].click();
-            }
-        } else if (e.key === 'Escape') {
-            billToSearchResults.classList.add('hidden');
-            selectedIndex = -1;
-        }
-    });
-    
-    // Close dropdown when clicking outside
-    document.addEventListener('click', function(e) {
-        if (!billToSearch.contains(e.target) && !billToSearchResults.contains(e.target)) {
-            billToSearchResults.classList.add('hidden');
-            selectedIndex = -1;
-        }
-    });
-}
-
-function displaySearchResults(customers, searchTerm) {
-    const billToSearchResults = document.getElementById('billToSearchResults');
-    const billToSearch = document.getElementById('billToSearch');
-    
-    if (customers.length === 0) {
-        billToSearchResults.innerHTML = `
-            <div class="search-result-item">
-                <div class="company-name">No matching companies found</div>
-                <div class="company-gstin">Try a different search term</div>
-            </div>
-        `;
-        billToSearchResults.classList.remove('hidden');
+    if (!billToSearch || !billToSearchResults) {
+        console.error('Elements not found!');
         return;
     }
     
-    billToSearchResults.innerHTML = '';
-    
-    customers.forEach(customer => {
-        const resultItem = document.createElement('div');
-        resultItem.className = 'search-result-item';
+    // Simple input event listener
+    billToSearch.oninput = function() {
+        const searchTerm = this.value.trim();
+        console.log('=== SEARCH INPUT ===');
+        console.log('Search term:', searchTerm);
         
-        const isGSTIN = /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/.test(searchTerm);
-        const searchType = isGSTIN ? 'gstin' : 'company';
-        
-        resultItem.innerHTML = `
-            <div class="company-name">
-                ${customer.company_name}
-                <span class="search-type-indicator search-type-${searchType}">${searchType}</span>
-            </div>
-            <div class="company-gstin">${customer.gstin || 'No GSTIN'}</div>
-            ${customer.address ? `<div class="company-address">${customer.address}</div>` : ''}
-        `;
-        
-        resultItem.addEventListener('click', () => {
-            selectCustomerFromBillToSearch(customer);
-            billToSearchResults.classList.add('hidden');
-        });
-        
-        resultItem.addEventListener('mouseenter', () => {
-            resultItem.classList.add('selected');
-        });
-        
-        resultItem.addEventListener('mouseleave', () => {
-            resultItem.classList.remove('selected');
-        });
-        
-        billToSearchResults.appendChild(resultItem);
-    });
-    
-    billToSearchResults.classList.remove('hidden');
-}
-
-function updateSelection(items, selectedIndex) {
-    items.forEach((item, index) => {
-        if (index === selectedIndex) {
-            item.classList.add('selected');
+        if (searchTerm.length > 0) {
+            console.log('Making API call for:', searchTerm);
+            // Make API call immediately
+            fetch(`/api/customers/search?query=${encodeURIComponent(searchTerm)}`)
+                .then(response => {
+                    console.log('API response status:', response.status);
+                    console.log('API response ok:', response.ok);
+                    return response.json();
+                })
+                .then(customers => {
+                    console.log('API response data:', customers);
+                    showCustomerDropdown(customers, searchTerm);
+                })
+                .catch(error => {
+                    console.error('API error:', error);
+                    showCustomerDropdown([], searchTerm);
+                });
         } else {
-            item.classList.remove('selected');
+            console.log('Search term empty, hiding dropdown');
+            hideCustomerDropdown();
+        }
+    };
+    
+    // Simple click outside to hide
+    document.addEventListener('click', function(e) {
+        if (!billToSearch.contains(e.target) && !billToSearchResults.contains(e.target)) {
+            hideCustomerDropdown();
         }
     });
+    
+    console.log('Bill to search setup complete');
 }
 
-function selectCustomerFromBillToSearch(customer) {
+function showCustomerDropdown(customers, searchTerm) {
+    const billToSearchResults = document.getElementById('billToSearchResults');
+    
+    console.log('=== SHOWING CUSTOMER DROPDOWN ===');
+    console.log('billToSearchResults element:', billToSearchResults);
+    console.log('customers:', customers);
+    console.log('searchTerm:', searchTerm);
+    
+    if (!billToSearchResults) {
+        console.error('billToSearchResults element not found!');
+        return;
+    }
+    
+    if (!customers || customers.length === 0) {
+        console.log('No customers found, showing no results message');
+        billToSearchResults.innerHTML = `
+            <div class="search-result-item">
+                <div class="company-name">No customers found</div>
+                <div class="company-gstin">Try a different search term</div>
+            </div>
+        `;
+    } else {
+        console.log('Building dropdown for', customers.length, 'customers');
+        billToSearchResults.innerHTML = '';
+        customers.forEach(customer => {
+            const div = document.createElement('div');
+            div.className = 'search-result-item';
+            div.innerHTML = `
+                <div class="company-name">${customer.company_name}</div>
+                <div class="company-gstin">${customer.gstin || 'No GSTIN'}</div>
+            `;
+            
+            div.onclick = function() {
+                selectCustomer(customer);
+                hideCustomerDropdown();
+            };
+            
+            billToSearchResults.appendChild(div);
+        });
+    }
+    
+    // Remove hidden class
+    billToSearchResults.classList.remove('hidden');
+    console.log('Hidden class removed');
+    console.log('Current classes:', billToSearchResults.className);
+    console.log('Computed display:', window.getComputedStyle(billToSearchResults).display);
+    console.log('Computed visibility:', window.getComputedStyle(billToSearchResults).visibility);
+    console.log('Computed opacity:', window.getComputedStyle(billToSearchResults).opacity);
+    console.log('Computed z-index:', window.getComputedStyle(billToSearchResults).zIndex);
+    
+    // Force display block
+    billToSearchResults.style.display = 'block';
+    billToSearchResults.style.visibility = 'visible';
+    billToSearchResults.style.opacity = '1';
+    billToSearchResults.style.zIndex = '9999';
+    
+    console.log('Dropdown should be visible now with', customers.length, 'customers');
+}
+
+function hideCustomerDropdown() {
+    const billToSearchResults = document.getElementById('billToSearchResults');
+    billToSearchResults.classList.add('hidden');
+    console.log('Dropdown hidden');
+}
+
+function selectCustomer(customer) {
     const billToSearch = document.getElementById('billToSearch');
     const customerSelect = document.getElementById('customerSelect');
     const customerDetails = document.getElementById('customerDetails');
@@ -516,19 +657,24 @@ function selectCustomerFromBillToSearch(customer) {
     const customerBoe = document.getElementById('customerBoe');
     const customerNewTon = document.getElementById('customerNewTon');
     
-    // Update search input to show selected company
+    console.log('Customer selected:', customer);
+    
+    // Update search input
     billToSearch.value = customer.company_name;
     
-    // Update hidden customer select
+    // Update hidden select
     customerSelect.value = customer.id;
     
-    // Show customer details section
+    // Show customer details
     customerDetails.classList.remove('hidden');
     
     // Update customer details fields
     customerGstin.value = customer.gstin || '';
     customerBoe.value = customer.boe || '';
     customerNewTon.value = customer.new_ton || '';
+    
+    // Clear validation
+    clearFieldValidation('customer_id');
     
     // Show success message
     showToast(`Selected: ${customer.company_name}`, 'success');
@@ -574,22 +720,108 @@ function handleCustomerChange() {
 async function handleShipmentSubmit(e) {
     e.preventDefault();
     
+    // Clear previous validation messages
+    clearValidationMessages();
+    
+    // Get form data
     const formData = new FormData(shipmentForm);
     const shipmentData = {
-        shipment_type: formData.get('shipmentType'),
-        shipment_subtype: formData.get('shipmentSubtype'),
-        asc: formData.get('asc'),
-        sh: formData.get('sh'),
-        ref: formData.get('ref'),
+        shipment_type: formData.get('shipment_type'),
+        shipment_subtype: formData.get('shipment_subtype'),
+        asc_number: formData.get('asc_number'),
+        sh_number: formData.get('sh_number'),
+        ref_number: formData.get('ref_number'),
         customer_id: formData.get('customer_id'),
-        cbm: parseFloat(formData.get('cbm')),
+        cbm: formData.get('cbm'),
         odc: formData.get('odc'),
-        length: parseFloat(formData.get('length')) || null,
-        breadth: parseFloat(formData.get('breadth')) || null,
-        height: parseFloat(formData.get('height')) || null,
-        packages: parseInt(formData.get('packages')) || null
+        length: formData.get('length'),
+        breadth: formData.get('breadth'),
+        height: formData.get('height'),
+        packages: formData.get('packages')
     };
     
+    // Validation
+    const errors = [];
+    
+    if (!shipmentData.shipment_type) {
+        errors.push({ field: 'shipment_type', message: 'Shipment type is required' });
+    }
+    
+    if (!shipmentData.shipment_subtype) {
+        errors.push({ field: 'shipment_subtype', message: 'Shipment subtype is required' });
+    }
+    
+    if (!shipmentData.asc_number || shipmentData.asc_number.trim() === '') {
+        errors.push({ field: 'asc_number', message: 'ASC number is required' });
+    }
+    
+    if (!shipmentData.sh_number || shipmentData.sh_number.trim() === '') {
+        errors.push({ field: 'sh_number', message: 'SH number is required' });
+    }
+    
+    if (!shipmentData.ref_number || shipmentData.ref_number.trim() === '') {
+        errors.push({ field: 'ref_number', message: 'Ref number is required' });
+    }
+    
+    // Check if customer is selected (either through dropdown or search)
+    const customerSelect = document.getElementById('customerSelect');
+    const billToSearch = document.getElementById('billToSearch');
+    
+    if (!customerSelect.value && (!billToSearch.value || billToSearch.value.trim() === '')) {
+        errors.push({ field: 'customer_id', message: 'Please select a customer' });
+    }
+    
+    if (!shipmentData.cbm || parseFloat(shipmentData.cbm) <= 0) {
+        errors.push({ field: 'cbm', message: 'CBM must be greater than 0' });
+    }
+    
+    if (!shipmentData.odc) {
+        errors.push({ field: 'odc', message: 'ODC selection is required' });
+    }
+    
+    if (shipmentData.length && parseFloat(shipmentData.length) <= 0) {
+        errors.push({ field: 'length', message: 'Length must be greater than 0' });
+    }
+    
+    if (shipmentData.breadth && parseFloat(shipmentData.breadth) <= 0) {
+        errors.push({ field: 'breadth', message: 'Breadth must be greater than 0' });
+    }
+    
+    if (shipmentData.height && parseFloat(shipmentData.height) <= 0) {
+        errors.push({ field: 'height', message: 'Height must be greater than 0' });
+    }
+    
+    if (shipmentData.packages && parseInt(shipmentData.packages) <= 0) {
+        errors.push({ field: 'packages', message: 'Packages must be greater than 0' });
+    }
+    
+    // Display validation errors
+    if (errors.length > 0) {
+        errors.forEach(error => {
+            showFieldValidation(error.field, error.message);
+        });
+        showToast('Please fix the validation errors', 'error');
+        return;
+    }
+    
+    // If customer was selected via search but not in dropdown, find the customer
+    if (!customerSelect.value && billToSearch.value) {
+        const searchTerm = billToSearch.value.trim();
+        const matchingCustomer = customers.find(customer => 
+            customer.company_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            customer.gstin === searchTerm
+        );
+        
+        if (matchingCustomer) {
+            shipmentData.customer_id = matchingCustomer.id;
+        } else {
+            showFieldValidation('customer_id', 'Please select a valid customer from the dropdown');
+            showToast('Please select a valid customer', 'error');
+            return;
+        }
+    }
+    
+    // Show loading
     showLoading();
     
     try {
@@ -598,33 +830,81 @@ async function handleShipmentSubmit(e) {
             headers: {
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify(shipmentData)
+            body: JSON.stringify(shipmentData),
+            credentials: 'include'
         });
         
-        const data = await response.json();
+        const result = await response.json();
         
         if (response.ok) {
-            showToast('Shipment created and draft invoice generated successfully!', 'success');
-            shipmentForm.reset();
-            customerDetails.classList.add('hidden');
-            handleShipmentTypeChange();
+            showToast('Shipment created successfully!', 'success');
             
-            // Add to recent activity
-            addRecentActivity('created', `New shipment created: ${shipmentData.shipment_type} - ${shipmentData.shipment_subtype}`);
-            
-            // Show the generated invoice
-            if (data.invoiceId) {
-                showInvoiceModal(data.invoiceId);
+            // Show invoice modal if invoice was created
+            if (result.invoice) {
+                showInvoiceModal(result.invoice.id);
             }
+            
+            // Reset form
+            shipmentForm.reset();
+            document.getElementById('customerDetails').classList.add('hidden');
+            document.getElementById('billToSearch').value = '';
+            clearValidationMessages();
+            
         } else {
-            showToast(data.error || 'Failed to create shipment', 'error');
+            showToast(result.error || 'Failed to create shipment', 'error');
         }
     } catch (error) {
-        console.error('Shipment creation error:', error);
-        showToast('Failed to create shipment. Please try again.', 'error');
+        console.error('Error creating shipment:', error);
+        showToast('Network error. Please try again.', 'error');
     } finally {
         hideLoading();
     }
+}
+
+// Function to clear all validation messages
+function clearValidationMessages() {
+    const validationMessages = document.querySelectorAll('.validation-message');
+    validationMessages.forEach(msg => msg.remove());
+    
+    // Remove error styling from inputs
+    const errorInputs = document.querySelectorAll('.input-error');
+    errorInputs.forEach(input => input.classList.remove('input-error'));
+}
+
+// Function to show field validation message
+function showFieldValidation(fieldName, message) {
+    const field = document.getElementById(fieldName);
+    if (!field) return;
+    
+    // Add error styling to input
+    field.classList.add('input-error');
+    
+    // Remove existing validation message
+    const existingMessage = field.parentNode.querySelector('.validation-message');
+    if (existingMessage) {
+        existingMessage.remove();
+    }
+    
+    // Create and add validation message
+    const validationMessage = document.createElement('div');
+    validationMessage.className = 'validation-message';
+    validationMessage.textContent = message;
+    validationMessage.style.color = '#e53e3e';
+    validationMessage.style.fontSize = '12px';
+    validationMessage.style.marginTop = '4px';
+    validationMessage.style.display = 'flex';
+    validationMessage.style.alignItems = 'center';
+    validationMessage.style.gap = '4px';
+    
+    // Add error icon
+    validationMessage.innerHTML = `
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+        </svg>
+        ${message}
+    `;
+    
+    field.parentNode.appendChild(validationMessage);
 }
 
 // Invoice functions
@@ -732,34 +1012,35 @@ function displayInvoiceModal(data) {
                 <!-- Company Header with Logo -->
                 <div class="invoice-header-print">
                     <div class="header-left">
-                        <img src="/images/accex-logo.png" alt="ACCEX Logo" class="company-logo-img">
+                        <img src="image.png" alt="ACCEX Logo" class="company-logo-img">
+                        <div class="company-info">
+                            <div class="company-name">ACCEX SUPPLY CHAIN PRIVATE LIMITED</div>
+                            <div class="company-subtitle">EKA: ACCEX SUPPLY CHAIN AND WAREHOUSING PRIVATE LIMITED</div>
+                            <div class="company-address">181/3, Taluka Panvel, Sai Village, Raigad, Maharashtra - 410206</div>
+                            <div class="company-website">www.accexscs.com</div>
+                        </div>
                     </div>
                     <div class="header-right">
-                        <div class="company-name">ACCEX SUPPLY CHAIN PRIVATE LIMITED</div>
-                        <div class="company-details-row">FLAT NO.07 FOURTH FLOOR, SHRI MANGAL COMPLEX</div>
-                        <div class="company-details-row">1887/2, Taluka Parvati, Sai Village</div>
-                        <div class="company-details-row">Pimpri, Maharashtra - 411058</div>
-                        
                         <div class="company-details-table">
                             <div class="details-row">
                                 <div class="details-label">PAN:</div>
-                                <div class="details-value">AAGCX9774J</div>
+                                <div class="details-value">AAGCK5974J</div>
                             </div>
                             <div class="details-row">
-                                <div class="details-label">GSTIN:</div>
-                                <div class="details-value">27AAGCX9774J2ZA</div>
+                                <div class="details-label">GSTN:</div>
+                                <div class="details-value">27AAGCK5974J2ZX</div>
                             </div>
                             <div class="details-row">
                                 <div class="details-label">CIN:</div>
-                                <div class="details-value">U63090MH2017PTC290994</div>
+                                <div class="details-value">U63030MH2017PTC295094</div>
                             </div>
                             <div class="details-row">
-                                <div class="details-label">IEC Certificate No.:</div>
-                                <div class="details-value">AAGCX9774J</div>
+                                <div class="details-label">DIPP Certificate No.:</div>
+                                <div class="details-value">DIPP5903</div>
                             </div>
                             <div class="details-row">
-                                <div class="details-label">MSME (Udyam Registration No.):</div>
-                                <div class="details-value">UDYAM-MH-33-0142947</div>
+                                <div class="details-label">MSME Udyam Registration No.:</div>
+                                <div class="details-value">UDYAM-MH-19-0141947</div>
                             </div>
                         </div>
                     </div>
@@ -767,121 +1048,259 @@ function displayInvoiceModal(data) {
                 
                 <div class="invoice-title">TAX INVOICE</div>
             
-                <!-- Customer and Invoice Details -->
-                <div class="invoice-details-section">
-                    <div class="customer-details">
-                        <div class="section-title">Customer Details:</div>
-                        <div class="details-row">
-                            <div class="details-label">Bill to:</div>
-                            <div class="details-value">${invoice.company_name || 'DHARMASHAKTI ASIA SERVICES LIMITED'}</div>
-                        </div>
-                        <div class="details-row">
-                            <div class="details-label">Address:</div>
-                            <div class="details-value">${invoice.address || 'FLAT NO. 1, BUILDING NO. 1, PRIME RESIDENCY ROAD, HIDC VASHI, NAVI MUMBAI - 400705 INDIA'}</div>
-                        </div>
-                        <div class="details-row">
-                            <div class="details-label">GSTIN:</div>
-                            <div class="details-value">${invoice.gstin || '27AABCD1234E1ZB'}</div>
-                        </div>
+                <!-- Invoice Details Table -->
+                <div class="invoice-details-table">
+                    <div class="details-row">
+                        <div class="details-label">Invoice No.:</div>
+                        <div class="details-value">${invoice.invoice_number || 'ASC2324MSZFC174'}</div>
                     </div>
-                    <div class="invoice-details">
-                        <div class="section-title">Invoice Details:</div>
-                        <div class="details-row">
-                            <div class="details-label">Invoice No.:</div>
-                            <div class="details-value">${invoice.invoice_no || 'ACC22Q4M22C274'}</div>
-                        </div>
-                        <div class="details-row">
-                            <div class="details-label">Invoice Date:</div>
-                            <div class="details-value">${invoice.invoice_date || '01-Nov-2023'}</div>
-                        </div>
-                        <div class="details-row">
-                            <div class="details-label">PO Number:</div>
-                            <div class="details-value">${invoice.po_number || 'PO-123456'}</div>
-                        </div>
-                        <div class="details-row">
-                            <div class="details-label">Place of Supply:</div>
-                            <div class="details-value">${invoice.place_of_supply || 'Maharashtra'}</div>
-                        </div>
-                        <div class="details-row">
-                            <div class="details-label">State Code:</div>
-                            <div class="details-value">${invoice.state_code || '27'}</div>
-                        </div>
-                        <div class="details-row">
-                            <div class="details-label">Reverse Charge:</div>
-                            <div class="details-value">${invoice.reverse_charge || 'No'}</div>
-                        </div>
-                        <div class="details-row">
-                            <div class="details-label">E-Reference #:</div>
-                            <div class="details-value">${invoice.e_reference || 'E-00291NEW'}</div>
-                        </div>
+                    <div class="details-row">
+                        <div class="details-label">Invoice Date:</div>
+                        <div class="details-value">${invoice.invoice_date || '10-Nov-2023'}</div>
+                    </div>
+                    <div class="details-row">
+                        <div class="details-label">PO Reference:</div>
+                        <div class="details-value">Contract</div>
+                    </div>
+                    <div class="details-row">
+                        <div class="details-label">Place of Supply:</div>
+                        <div class="details-value">Maharashtra</div>
+                    </div>
+                    <div class="details-row">
+                        <div class="details-label">State Code:</div>
+                        <div class="details-value">27</div>
+                    </div>
+                    <div class="details-row">
+                        <div class="details-label">Reverse Charge:</div>
+                        <div class="details-value">No</div>
+                    </div>
+                    <div class="details-row">
+                        <div class="details-label">SLB Reference #:</div>
+                        <div class="details-value">S-202919/REW</div>
+                    </div>
+                </div>
+                
+                <!-- Customer Details -->
+                <div class="customer-details-section">
+                    <div class="customer-info">
+                        <div class="section-title">Bill to:</div>
+                        <div class="customer-name">${invoice.company_name || 'SCHLUMBERGER ASIA SERVICES LIMITED'}</div>
+                        <div class="customer-address">${invoice.address || 'P-21, TTC INDUSTRIAL AREA, THANE BELAPUR ROAD, MIDC MAHAPE, THANE, MAHARASHTRA - 400710, INDIA'}</div>
+                        <div class="customer-gstin">GSTN: ${invoice.gstin || '27AADCS1107J1ZK'}</div>
+                        <div class="customer-ref">Reference Number: SH_1001684125</div>
                     </div>
                 </div>
                 
                 <!-- Service Details Table -->
-                <table class="invoice-table">
-                    <thead>
-                        <tr>
-                            <th>Description of Services</th>
-                            <th>UOM</th>
-                            <th>QUANTITY</th>
-                            <th>RATE</th>
-                            <th>CUR</th>
-                            <th>AMOUNT</th>
-                            <th>FX RATE</th>
-                            <th>AMOUNT (₹)</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td>Warehousing & Logistics Services<br>AWB - 99672P</td>
-                            <td>-</td>
-                            <td>-</td>
-                            <td>-</td>
-                            <td>-</td>
-                            <td>-</td>
-                            <td>-</td>
-                            <td>81.90</td>
-                        </tr>
-                        <tr>
-                            <td>AMC 221</td>
-                            <td>BOE #</td>
-                            <td>2058415</td>
-                            <td>-</td>
-                            <td>INR</td>
-                            <td>-</td>
-                            <td>-</td>
-                            <td>81.90</td>
-                        </tr>
-                        <tr>
-                            <td>Agency Charges</td>
-                            <td>BOE</td>
-                            <td>1.00</td>
-                            <td>-</td>
-                            <td>INR</td>
-                            <td>-</td>
-                            <td>-</td>
-                            <td>81.90</td>
-                        </tr>
-                        <tr>
-                            <td>Outbound Handling at FTWZ</td>
-                            <td>PKG</td>
-                            <td>2.00</td>
-                            <td>-</td>
-                            <td>USD</td>
-                            <td>-</td>
-                            <td>-</td>
-                            <td>1.00</td>
-                        </tr>
-                        <tr>
-                            <td>Transportation Charges</td>
-                            <td>VEH</td>
-                            <td>1.00</td>
-                            <td>-</td>
-                            <td>INR</td>
-                            <td>-</td>
-                            <td>-</td>
-                            <td>81.90</td>
-                        </tr>
+                <div class="service-details-section">
+                    <table class="invoice-table">
+                        <thead>
+                            <tr>
+                                <th>Description of Services</th>
+                                <th>UOM</th>
+                                <th>Quantity</th>
+                                <th>Rate</th>
+                                <th>CUR</th>
+                                <th>AMOUNT</th>
+                                <th>FX RATE</th>
+                                <th>AMOUNT ($)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Warehousing & Logistics Services<br>SAC: 996729</td>
+                                <td>SER</td>
+                                <td>1.00</td>
+                                <td>${invoice.subtotal_usd || 0}</td>
+                                <td>USD</td>
+                                <td>${invoice.subtotal_usd || 0}</td>
+                                <td>${invoice.fx_rate || 81.90}</td>
+                                <td>${invoice.subtotal_usd || 0}</td>
+                            </tr>
+                            <tr class="sub-header">
+                                <td colspan="8">ASC- 221, BOE #: 2024815</td>
+                            </tr>
+                            ${items ? items.map(item => `
+                                <tr>
+                                    <td>${item.description}</td>
+                                    <td>${item.uom}</td>
+                                    <td>${item.quantity}</td>
+                                    <td>${item.rate || '-'}</td>
+                                    <td>${item.currency}</td>
+                                    <td>${item.amount_usd || '-'}</td>
+                                    <td>${item.fx_rate || 81.90}</td>
+                                    <td>${item.amount_usd || '-'}</td>
+                                </tr>
+                            `).join('') : `
+                                <tr>
+                                    <td>Agency Charges</td>
+                                    <td>BOE</td>
+                                    <td>1.00</td>
+                                    <td>-</td>
+                                    <td>INR</td>
+                                    <td>-</td>
+                                    <td>81.90</td>
+                                    <td>-</td>
+                                </tr>
+                                <tr>
+                                    <td>Outbound Handling at FTWZ</td>
+                                    <td>PKG</td>
+                                    <td>2.00</td>
+                                    <td>-</td>
+                                    <td>USD</td>
+                                    <td>-</td>
+                                    <td>1.00</td>
+                                    <td>-</td>
+                                </tr>
+                                <tr>
+                                    <td>Transportation Charges</td>
+                                    <td>VEH</td>
+                                    <td>1.00</td>
+                                    <td>-</td>
+                                    <td>INR</td>
+                                    <td>-</td>
+                                    <td>81.90</td>
+                                    <td>-</td>
+                                </tr>
+                                <tr>
+                                    <td>LR Charges</td>
+                                    <td>VEH</td>
+                                    <td>1.00</td>
+                                    <td>-</td>
+                                    <td>INR</td>
+                                    <td>-</td>
+                                    <td>81.90</td>
+                                    <td>-</td>
+                                </tr>
+                                <tr>
+                                    <td>CE Certificate</td>
+                                    <td>BOE</td>
+                                    <td>1.00</td>
+                                    <td>-</td>
+                                    <td>INR</td>
+                                    <td>-</td>
+                                    <td>81.90</td>
+                                    <td>-</td>
+                                </tr>
+                                <tr>
+                                    <td>Box Opening & Repacking</td>
+                                    <td>BOX</td>
+                                    <td>2.00</td>
+                                    <td>-</td>
+                                    <td>INR</td>
+                                    <td>-</td>
+                                    <td>81.90</td>
+                                    <td>-</td>
+                                </tr>
+                                <tr>
+                                    <td>MHE Charges</td>
+                                    <td>HST</td>
+                                    <td>1.00</td>
+                                    <td>-</td>
+                                    <td>INR</td>
+                                    <td>-</td>
+                                    <td>81.90</td>
+                                    <td>-</td>
+                                </tr>
+                            `}
+                            <tr class="tax-row">
+                                <td colspan="6">IGST</td>
+                                <td>18.00%</td>
+                                <td>-</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    
+                    <div class="packing-details">
+                        <div class="packing-title">Packing List DIMS:</div>
+                        <div class="packing-item">344 x 18 x 30 x 1 | 0.186</div>
+                        <div class="packing-item">258 x 38 x 50 x 1 | 0.490</div>
+                        <div class="packing-total">TOTAL: 0.676 CBM</div>
+                    </div>
+                    
+                    <div class="fx-note">* FX Rates are basis respective shipment rate</div>
+                </div>
+                
+                <!-- Summary Section -->
+                <div class="summary-section">
+                    <div class="total-bill">
+                        <div class="total-label">Total Bill Value (USD):</div>
+                        <div class="total-value">$${invoice.total_usd || 0}</div>
+                    </div>
+                    
+                    <table class="summary-table">
+                        <thead>
+                            <tr>
+                                <th>FX Rate</th>
+                                <th>HSN / SAC</th>
+                                <th>IGST %</th>
+                                <th>Taxable ($)</th>
+                                <th>Taxable (₹)</th>
+                                <th>IGST ($)</th>
+                                <th>IGST (₹)</th>
+                                <th>Total ($)</th>
+                                <th>Total (₹)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>${invoice.fx_rate || 81.90}</td>
+                                <td>996729</td>
+                                <td>18.00%</td>
+                                <td>${invoice.subtotal_usd || 0}</td>
+                                <td>${invoice.subtotal_inr || 0}</td>
+                                <td>${invoice.igst_amount_usd || 0}</td>
+                                <td>${invoice.igst_amount_inr || 0}</td>
+                                <td>${invoice.total_usd || 0}</td>
+                                <td>${invoice.total_inr || 0}</td>
+                            </tr>
+                            <tr class="total-row">
+                                <td colspan="7">TOTAL</td>
+                                <td>${invoice.total_usd || 0}</td>
+                                <td>${invoice.total_inr || 0}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                
+                <!-- Declaration and Bank Details -->
+                <div class="footer-section">
+                    <div class="declaration">
+                        In case of any discrepancies / queries please send a mail within 2 days of receipt of this invoice to our point of contact nominated for your account and copy billing @accexscs.com
+                    </div>
+                    
+                    <div class="bank-details">
+                        <div class="bank-title">For ACCEX SUPPLY CHAIN PRIVATE LIMITED</div>
+                        <div class="bank-info">
+                            <div class="bank-row">
+                                <span class="bank-label">Bank:</span>
+                                <span class="bank-value">ICICI Bank</span>
+                            </div>
+                            <div class="bank-row">
+                                <span class="bank-label">Branch:</span>
+                                <span class="bank-value">Powai</span>
+                            </div>
+                            <div class="bank-row">
+                                <span class="bank-label">IFSC:</span>
+                                <span class="bank-value">ICIC0000020</span>
+                            </div>
+                            <div class="bank-row">
+                                <span class="bank-label">Account #:</span>
+                                <span class="bank-value">002005035489</span>
+                            </div>
+                        </div>
+                        <div class="signatory">Authorised Signatory</div>
+                    </div>
+                    
+                    <div class="company-footer">
+                        <div class="registered-office">
+                            <strong>Registered Office:</strong> 109, First Floor, Srishti Plaza, Saki Vihar Road, Powai, Mumbai - 400072
+                        </div>
+                        <div class="startup-recognition">
+                            ACCEX SUPPLY CHAIN AND WAREHOUSING PRIVATE LIMITED is recognised as a "STARTUP" by the Department of Industrial Policy and Promotion (DIPP) of the Government of India.
+                        </div>
+                    </div>
+                </div>
                         <tr>
                             <td>Documentation Charges</td>
                             <td>DOC</td>
@@ -1343,24 +1762,27 @@ function printInvoice() {
 // Dashboard functions
 async function loadDashboardData() {
     try {
-        const [shipmentsResponse, invoicesResponse] = await Promise.all([
-            fetch('/api/shipments'),
-            fetch('/api/invoices')
-        ]);
+        // Load shipments
+        const shipmentsResponse = await fetch('/api/shipments');
+        if (shipmentsResponse.ok) {
+            const shipments = await shipmentsResponse.json();
+            updateDashboardStats(shipments);
+        }
         
-        if (shipmentsResponse.ok && invoicesResponse.ok) {
-            shipments = await shipmentsResponse.json();
-            invoices = await invoicesResponse.json();
-            updateDashboardStats();
+        // Load invoices
+        const invoicesResponse = await fetch('/api/invoices');
+        if (invoicesResponse.ok) {
+            const invoices = await invoicesResponse.json();
+            updateRecentActivity(invoices);
         }
     } catch (error) {
         console.error('Error loading dashboard data:', error);
     }
 }
 
-function updateDashboardStats() {
+function updateDashboardStats(shipmentsData) {
     // Check if elements exist before updating them
-    if (totalShipments) totalShipments.textContent = shipments.length;
+    if (totalShipments) totalShipments.textContent = shipmentsData.length;
     if (totalInvoices) totalInvoices.textContent = invoices.length;
     
     const totalRevenueUSD = invoices.reduce((sum, invoice) => sum + parseFloat(invoice.total_amount_usd || 0), 0);
@@ -1373,7 +1795,7 @@ function updateDashboardStats() {
     updateRecentActivity();
 }
 
-function updateRecentActivity() {
+function updateRecentActivity(invoicesData) {
     // Check if recentActivity element exists
     if (!recentActivity) return;
     
@@ -1390,7 +1812,7 @@ function updateRecentActivity() {
     });
     
     // Add recent invoices
-    const recentInvoices = invoices.slice(0, 3);
+    const recentInvoices = invoicesData.slice(0, 3);
     recentInvoices.forEach(invoice => {
         recentItems.push({
             icon: invoice.status === 'finalized' ? 'finalized' : 'created',

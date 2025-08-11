@@ -160,8 +160,8 @@
                             <div class="form-row">
                                 <div class="form-col">
                                     <div class="form-group">
-                                        <label for="shipmentType">Shipment Type</label>
-                                        <select id="shipmentType" name="shipmentType" required>
+                                        <label for="shipment_type" class="required">Shipment Type</label>
+                                        <select id="shipment_type" name="shipment_type" required>
                                             <option value="">Select Shipment Type</option>
                                             <option value="Inbound">Inbound</option>
                                             <option value="Outbound">Outbound</option>
@@ -171,8 +171,8 @@
                                 
                                 <div class="form-col">
                                     <div class="form-group">
-                                        <label for="shipmentSubtype">Shipment Subtype</label>
-                                        <select id="shipmentSubtype" name="shipmentSubtype" disabled required>
+                                        <label for="shipment_subtype" class="required">Shipment Subtype</label>
+                                        <select id="shipment_subtype" name="shipment_subtype" required>
                                             <option value="">Select Shipment Type First</option>
                                         </select>
                                     </div>
@@ -182,22 +182,22 @@
                             <div class="form-row">
                                 <div class="form-col">
                                     <div class="form-group">
-                                        <label for="asc">ASC</label>
-                                        <input type="text" id="asc" name="asc" placeholder="Enter ASC">
+                                        <label for="asc_number" class="required">ASC</label>
+                                        <input type="text" id="asc_number" name="asc_number" placeholder="Enter ASC Number" required>
                                     </div>
                                 </div>
                                 
                                 <div class="form-col">
                                     <div class="form-group">
-                                        <label for="sh">SH</label>
-                                        <input type="text" id="sh" name="sh" placeholder="Enter SH">
+                                        <label for="sh_number" class="required">SH</label>
+                                        <input type="text" id="sh_number" name="sh_number" placeholder="Enter SH Number" required>
                                     </div>
                                 </div>
                                 
                                 <div class="form-col">
                                     <div class="form-group">
-                                        <label for="ref">Ref</label>
-                                        <input type="text" id="ref" name="ref" placeholder="Enter Reference">
+                                        <label for="ref_number" class="required">Ref</label>
+                                        <input type="text" id="ref_number" name="ref_number" placeholder="Enter Ref Number" required>
                                     </div>
                                 </div>
                             </div>
@@ -205,25 +205,27 @@
                             <div class="form-row">
                                 <div class="form-col">
                                     <div class="form-group">
-                                        <label for="billToSearch">Bill To (Search by Company Name or GSTIN)</label>
+                                        <label for="billToSearch" class="required">Bill To (Search by Company Name or GSTIN)</label>
                                         <div class="search-container">
                                             <input type="text" id="billToSearch" placeholder="Type company name or GSTIN number..." autocomplete="off">
                                             <div id="billToSearchResults" class="dropdown-results hidden"></div>
                                         </div>
                                         <input type="hidden" id="customerSelect" name="customer_id" required>
+                                        <button type="button" id="testDropdown" style="margin-top: 10px; padding: 5px 10px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer;">Test Dropdown</button>
+                                        <button type="button" id="testSearch" style="margin-top: 10px; margin-left: 10px; padding: 5px 10px; background: #28a745; color: white; border: none; border-radius: 4px; cursor: pointer;">Test Search</button>
                                     </div>
                                 </div>
                                 
                                 <div class="form-col">
                                     <div class="form-group">
-                                        <label for="cbm">CBM</label>
+                                        <label for="cbm" class="required">CBM</label>
                                         <input type="number" id="cbm" name="cbm" step="0.01" placeholder="Enter CBM" required>
                                     </div>
                                 </div>
                                 
                                 <div class="form-col">
                                     <div class="form-group">
-                                        <label for="odc">ODC</label>
+                                        <label for="odc" class="required">ODC</label>
                                         <select id="odc" name="odc" required>
                                             <option value="No">No</option>
                                             <option value="Yes">Yes</option>
