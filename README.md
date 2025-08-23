@@ -1,312 +1,332 @@
-# ACCEX Supply Chain Solutions - Shipment & Invoice Management System
+# ACCEX Supply Chain Solutions - Shipment & Invoice Manager
 
-A professional, responsive web application for managing shipments and generating invoices seamlessly. Built with Node.js, Express, SQLite, and modern frontend technologies.
+A professional web application for managing shipments and generating invoices seamlessly. Built with Node.js, Express, SQLite, and modern web technologies.
 
 ## Features
 
-### 🔐 Authentication
-- Secure login system with email and password
-- Session-based authentication
-- Default admin credentials provided
+- **Secure Authentication**: Login/signup system with session management
+- **Shipment Management**: Create and manage inbound/outbound shipments
+- **Invoice Generation**: Automatic invoice generation with tax calculations
+- **Customer Management**: Search customers by company name or GSTIN with validation
+- **Dashboard**: Real-time statistics and recent activity tracking
+- **Responsive Design**: Works on desktop and mobile devices
 
-### 📊 Dashboard
-- Overview of total shipments, invoices, and revenue
-- Recent activity tracking
-- Real-time statistics
+## Tech Stack
 
-### 📦 Shipment Management
-- **Add Shipment** functionality with comprehensive form
-- **Shipment Types**: Inbound and Outbound
-- **Inbound Subtypes**: FC to FTWZ BOE, DTA to FTWZ
-- **Outbound Subtypes**: FTWZ to DTA, FTWZ to FC, Intra SEZ
-- Customer selection with auto-populated fields (GSTIN, BOE, New Ton)
-- Dimensions tracking (Length, Breadth, Height, Packages)
-- CBM and ODC management
+- **Backend**: Node.js, Express.js, SQLite3
+- **Frontend**: Vanilla JavaScript, HTML5, CSS3
+- **Authentication**: bcryptjs, express-session
+- **Database**: SQLite with comprehensive schema
+- **Styling**: Custom CSS with modern design
 
-### 🧾 Invoice Generation
-- **Automatic draft invoice creation** upon shipment submission
-- **Professional invoice layout** following Goldcrest Logistics format
-- **Tax calculations** with IGST and currency conversion
-- **Invoice finalization** process
-- **Print-ready** invoice format
-
-### 📋 Invoice Management
-- View all invoices with filtering options
-- Draft and finalized invoice status
-- Detailed invoice preview in modal
-- Invoice finalization workflow
-
-### 🎨 User Interface
-- **Modern, responsive design**
-- **Professional color scheme**
-- **Intuitive navigation** with sidebar
-- **Toast notifications** for user feedback
-- **Loading states** and error handling
-
-## Technology Stack
-
-### Backend
-- **Node.js** - Runtime environment
-- **Express.js** - Web framework
-- **SQLite3** - Database
-- **bcryptjs** - Password hashing
-- **express-session** - Session management
-- **moment.js** - Date handling
-
-### Frontend
-- **Vanilla JavaScript** - No framework dependencies
-- **CSS3** - Modern styling with Flexbox and Grid
-- **Font Awesome** - Icons
-- **Google Fonts** - Typography
-
-## Installation & Setup
+## Quick Start
 
 ### Prerequisites
+
 - Node.js (v14 or higher)
-- npm (comes with Node.js)
+- npm or yarn
 
-### Step 1: Clone or Download
-```bash
-# If using git
-git clone <repository-url>
-cd shipment-invoice-manager
+### Installation
 
-# Or download and extract the files
-```
+1. **Clone the repository**
+   ```bash
+   git clone <your-repo-url>
+   cd Shipment
+   ```
 
-### Step 2: Install Dependencies
-```bash
-npm install
-```
+2. **Install dependencies**
+   ```bash
+   npm install
+   ```
 
-### Step 3: Start the Application
-```bash
-# Development mode (with auto-restart)
-npm run dev
+3. **Start the application**
+   ```bash
+   npm start
+   ```
 
-# Production mode
-npm start
-```
+4. **Access the application**
+   - Open your browser and go to `http://localhost:3000`
+   - Use the default credentials: `admin@123.com` / `admin`
 
-### Step 4: Access the Application
-Open your browser and navigate to:
-```
-http://localhost:3000
-```
+## Database Setup
 
-### Step 5: Login
-Use the default credentials:
-- **Email**: admin@accexscs.com
-- **Password**: admin123
+### Using the SQL File
 
-## Database Structure
+The project includes a comprehensive SQL file (`accex_shipment_database.sql`) that contains:
 
-The application uses SQLite with the following tables:
+- Complete database schema
+- Sample data with real GSTIN numbers
+- Indexes for performance optimization
+- Views for common queries
+- Triggers for data integrity
+- Validation constraints
 
-### Users
-- User authentication and management
+### MySQL Workbench Integration
 
-### Customers
-- Customer information (company name, contact, address, GSTIN, BOE, New Ton)
+#### Step 1: Install MySQL Workbench
+1. Download MySQL Workbench from [MySQL Downloads](https://dev.mysql.com/downloads/workbench/)
+2. Install and launch MySQL Workbench
 
-### Shipments
-- Shipment details (type, subtype, dimensions, customer, etc.)
+#### Step 2: Create a New Connection
+1. Click the "+" icon next to "MySQL Connections"
+2. Configure the connection:
+   - **Connection Name**: ACCEX Shipment DB
+   - **Hostname**: localhost
+   - **Port**: 3306
+   - **Username**: your_mysql_username
+   - **Password**: your_mysql_password
+3. Click "Test Connection" to verify
+4. Click "OK" to save
 
-### Invoices
-- Invoice headers (number, date, amounts, status)
+#### Step 3: Create Database
+1. Connect to your MySQL server
+2. Create a new database:
+   ```sql
+   CREATE DATABASE accex_shipment_db;
+   USE accex_shipment_db;
+   ```
 
-### Invoice Items
-- Line items with tax calculations and currency conversion
+#### Step 4: Import SQL File
+1. Go to **Server** → **Data Import**
+2. Select **Import from Self-Contained File**
+3. Browse and select `accex_shipment_database.sql`
+4. Select **Default Target Schema**: accex_shipment_db
+5. Click **Start Import**
 
-## Usage Guide
+#### Step 5: Verify Import
+1. Refresh the SCHEMAS panel
+2. Expand `accex_shipment_db`
+3. Verify all tables are created:
+   - users
+   - customers
+   - shipments
+   - invoices
+   - invoice_items
 
-### 1. Dashboard
-- View overview statistics
-- Monitor recent activity
-- Quick access to main functions
+### Alternative: SQLite Browser
 
-### 2. Adding a Shipment
-1. Navigate to "Add Shipment"
-2. Select shipment type (Inbound/Outbound)
-3. Choose appropriate subtype
-4. Fill in shipment details (ASC, SH, Ref)
-5. Select customer from dropdown
-6. Enter dimensions and other details
-7. Submit to create shipment and generate draft invoice
+For SQLite database management:
 
-### 3. Managing Invoices
-1. Go to "View Invoices"
-2. Filter by status (All/Draft/Finalized)
-3. Click on invoice to view details
-4. Review draft invoices
-5. Finalize when ready
-6. Print invoices as needed
+1. **Download SQLite Browser**: [DB Browser for SQLite](https://sqlitebrowser.org/)
+2. **Open the database**: Open `shipment_invoice.db`
+3. **Execute SQL**: Use the "Execute SQL" tab to run queries
+4. **Import SQL file**: Copy and paste the contents of `accex_shipment_database.sql`
 
-### 4. Invoice Workflow
-1. **Draft Creation**: Automatic when shipment is created
-2. **Review**: View in modal with full details
-3. **Finalization**: Convert draft to finalized invoice
-4. **Print**: Generate print-ready version
+### Database Schema Overview
 
-## Invoice Format
+#### Tables Structure
 
-The application generates professional invoices with:
+**Users Table**
+- Authentication and user management
+- Role-based access control
+- Session tracking
 
-### Header Section
-- Company details (ACCEX Supply Chain Private Limited)
-- Contact information and address
-- "TAX INVOICE" title
+**Customers Table**
+- Company information with GSTIN validation
+- Contact details and addresses
+- Soft delete functionality
 
-### Invoice Details
-- Invoice number and date
-- Place of supply and recipient GSTIN
-- State and state code
+**Shipments Table**
+- Shipment tracking with validation
+- Foreign key relationships
+- Status management
 
-### Bill To / Ship To
-- Customer information
-- Contact person and address
-- GSTIN details
+**Invoices Table**
+- Invoice management with calculations
+- Tax calculations (IGST)
+- Currency conversion
 
-### Service Details Table
-- Line items with descriptions
-- Quantities, rates, and amounts
-- Currency conversion with FX rates
+**Invoice Items Table**
+- Line item details
+- Rate calculations
+- Tax breakdown
 
-### Tax Summary
-- HSN/SAC codes
-- IGST calculations
-- Taxable amounts in USD and INR
+#### Views
 
-### Totals
-- Total bill values in both currencies
-- Final invoice amount
+- `v_shipment_details`: Shipment information with customer details
+- `v_invoice_details`: Invoice information with customer and shipment details
+- `v_customer_search`: Optimized view for customer search
 
-### Declaration & Signature
-- Legal declaration
-- Authorized signatory section
+#### Triggers
 
-## Configuration
-
-### Environment Variables
-The application can be configured using environment variables:
-
-```bash
-PORT=3000                    # Server port (default: 3000)
-SESSION_SECRET=your-secret   # Session secret key
-```
-
-### Database
-The SQLite database (`shipment_invoice.db`) is automatically created on first run with:
-- Default admin user
-- Sample customers
-- Sample shipment and invoice for demonstration
+- Automatic timestamp updates
+- Data validation
+- Referential integrity
 
 ## API Endpoints
 
 ### Authentication
 - `POST /api/login` - User login
+- `POST /api/signup` - User registration
+- `GET /api/auth/status` - Check authentication status
 - `POST /api/logout` - User logout
 
 ### Customers
 - `GET /api/customers` - Get all customers
-- `GET /api/customers/:id` - Get customer by ID
+- `GET /api/customers/search?query=...` - Search customers by name or GSTIN
+- `GET /api/customers/:id` - Get specific customer
+- `POST /api/customers` - Add new customer
+- `PUT /api/customers/:id` - Update customer
+- `DELETE /api/customers/:id` - Delete customer (soft delete)
 
 ### Shipments
 - `GET /api/shipments` - Get all shipments
 - `POST /api/shipments` - Create new shipment
+- `GET /api/shipments/:id` - Get specific shipment
 
 ### Invoices
 - `GET /api/invoices` - Get all invoices
-- `GET /api/invoices/:id` - Get invoice details
-- `POST /api/invoices/:id/finalize` - Finalize invoice
+- `GET /api/invoices/:id` - Get specific invoice
+- `POST /api/invoices/:id/finalize` - Finalize draft invoice
 
-## Customization
+## Enhanced Features
 
-### Adding New Shipment Types
-1. Update the shipment type options in `script.js`
-2. Modify the subtype logic in `handleShipmentTypeChange()`
+### Customer Management
+- **Add New Customers**: Form with validation for GSTIN, email, phone
+- **Search Functionality**: Search by company name or GSTIN number
+- **Validation Rules**:
+  - Company name: Required, minimum 2 characters
+  - GSTIN: Valid Indian GSTIN format
+  - Email: Valid email format
+  - Phone: Valid phone number format
+- **Soft Delete**: Customers with shipments cannot be deleted
 
-### Modifying Invoice Layout
-1. Edit the invoice template in `displayInvoiceModal()`
-2. Update CSS styles in `styles.css`
+### Bill-to Search
+- Search customers by company name or GSTIN number
+- Real-time dropdown suggestions
+- Keyboard navigation support
+- Auto-population of customer details
 
-### Adding New Fields
-1. Update database schema in `server.js`
-2. Modify form in `index.html`
-3. Update API endpoints and frontend logic
+### Demo Mode
+- Works without database connection for demonstration
+- Hardcoded credentials: `admin@123.com` / `admin`
+- Sample data for testing
 
-## Security Features
+## File Structure
 
-- **Password hashing** with bcrypt
-- **Session management** with express-session
-- **Input validation** and sanitization
-- **SQL injection protection** with parameterized queries
-- **CSRF protection** (can be enhanced)
+```
+Shipment/
+├── public/
+│   ├── index.html          # Main application page
+│   ├── script.js           # Frontend JavaScript
+│   ├── styles.css          # Application styles
+│   ├── image.png           # Company logo
+│   └── assets/             # Additional assets
+├── server.js               # Express server
+├── accex_shipment_database.sql  # Complete database schema
+├── package.json            # Dependencies
+├── .gitignore             # Git ignore rules
+└── README.md              # This file
+```
 
-## Performance Optimizations
+## Database Queries
 
-- **Static file serving** for CSS/JS
-- **Database indexing** on frequently queried fields
-- **Efficient queries** with JOINs
-- **Client-side caching** for better UX
+### Sample Queries for Reference
 
-## Browser Support
+**Get all active customers**
+```sql
+SELECT * FROM customers WHERE is_active = 1 ORDER BY company_name;
+```
 
-- Chrome (recommended)
-- Firefox
-- Safari
-- Edge
-- Mobile browsers
+**Search customers by company name or GSTIN**
+```sql
+SELECT * FROM v_customer_search 
+WHERE company_name LIKE '%search_term%' OR gstin LIKE '%search_term%'
+ORDER BY 
+    CASE 
+        WHEN company_name LIKE '%search_term%' THEN 1
+        WHEN gstin LIKE '%search_term%' THEN 2
+        ELSE 3
+    END,
+    company_name
+LIMIT 10;
+```
 
-## Troubleshooting
+**Get shipment statistics**
+```sql
+SELECT 
+    shipment_type,
+    COUNT(*) as total_shipments,
+    SUM(cbm) as total_cbm,
+    AVG(cbm) as avg_cbm
+FROM shipments 
+WHERE status != 'cancelled'
+GROUP BY shipment_type;
+```
 
-### Common Issues
+**Get invoice statistics**
+```sql
+SELECT 
+    status,
+    COUNT(*) as total_invoices,
+    SUM(total_usd) as total_amount_usd,
+    SUM(total_inr) as total_amount_inr
+FROM invoices 
+WHERE status != 'cancelled'
+GROUP BY status;
+```
 
-1. **Port already in use**
-   ```bash
-   # Change port in server.js or use different port
-   PORT=3001 npm start
-   ```
+## Development
 
-2. **Database errors**
-   ```bash
-   # Delete shipment_invoice.db and restart
-   rm shipment_invoice.db
-   npm start
-   ```
+### Running in Development Mode
+```bash
+npm run dev
+```
 
-3. **Dependencies issues**
-   ```bash
-   # Clear npm cache and reinstall
-   npm cache clean --force
-   rm -rf node_modules package-lock.json
-   npm install
-   ```
+### Database Reset
+To reset the database with fresh data:
+```bash
+rm shipment_invoice.db
+npm start
+```
 
-### Logs
-Check the console output for error messages and debugging information.
+### Database Maintenance
+```sql
+-- Check database integrity
+PRAGMA integrity_check;
 
-## Future Enhancements
+-- Optimize database
+VACUUM;
 
-- PDF generation for invoices
-- Email functionality
-- Advanced reporting and analytics
-- Multi-user roles and permissions
-- API rate limiting
-- Database backup functionality
-- Mobile app development
-- Integration with accounting software
+-- Analyze tables for better query performance
+ANALYZE;
+```
+
+## Deployment
+
+### Local Deployment
+1. Install dependencies: `npm install`
+2. Start server: `npm start`
+3. Access at: `http://localhost:3000`
+
+### Production Deployment
+1. Set environment variables
+2. Use PM2 or similar process manager
+3. Configure reverse proxy (nginx)
+4. Set up SSL certificates
+
+## Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Test thoroughly
+5. Submit a pull request
 
 ## License
 
-This project is licensed under the MIT License.
+This project is proprietary software for ACCEX Supply Chain Solutions.
 
 ## Support
 
-For support or questions, please refer to the documentation or create an issue in the repository.
+For support and questions, please contact the development team.
 
 ---
 
-**ACCEX Supply Chain Private Limited**  
-181/3, Taluka Panvel, Sai Village, igad, Maharashtra - 410206  
-Website: www.accexscs.com 
+**Default Login Credentials:**
+- Email: `admin@123.com`
+- Password: `admin`
+
+**Note:** The application includes demo mode functionality that works without a database connection for demonstration purposes.
+
+**Database File:** Use `accex_shipment_database.sql` for complete database setup with sample data and validation rules. 
