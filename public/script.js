@@ -1053,7 +1053,7 @@ function displayInvoiceModal(data) {
                                 <div class="logo-curve"></div>
                             </div>
                             <div class="logo-text">
-                                <div class="logo-main">ACCEX</div>
+                                <div class="logo-main"><span class="logo-acc">ACC</span><span class="logo-ex">EX</span></div>
                                 <div class="logo-subtitle">Supply Chain Solutions</div>
                             </div>
                         </div>
@@ -1164,89 +1164,76 @@ function displayInvoiceModal(data) {
                             <tr class="sub-header">
                                 <td colspan="8">ASC- 221, BOE #: 2024815</td>
                             </tr>
-                            ${items ? items.map(item => `
-                                <tr>
-                                    <td>${item.description}</td>
-                                    <td>${item.uom}</td>
-                                    <td>${item.quantity}</td>
-                                    <td>${item.rate || '-'}</td>
-                                    <td>${item.currency}</td>
-                                    <td>${item.amount_usd || '-'}</td>
-                                    <td>${item.fx_rate || 81.90}</td>
-                                    <td>${item.amount_usd || '-'}</td>
-                                </tr>
-                            `).join('') : `
-                                <tr>
-                                    <td>Agency Charges</td>
-                                    <td>BOE</td>
-                                    <td>1.00</td>
-                                    <td>-</td>
-                                    <td>INR</td>
-                                    <td>-</td>
-                                    <td>81.90</td>
-                                    <td>-</td>
-                                </tr>
-                                <tr>
-                                    <td>Outbound Handling at FTWZ</td>
-                                    <td>PKG</td>
-                                    <td>2.00</td>
-                                    <td>-</td>
-                                    <td>USD</td>
-                                    <td>-</td>
-                                    <td>1.00</td>
-                                    <td>-</td>
-                                </tr>
-                                <tr>
-                                    <td>Transportation Charges</td>
-                                    <td>VEH</td>
-                                    <td>1.00</td>
-                                    <td>-</td>
-                                    <td>INR</td>
-                                    <td>-</td>
-                                    <td>81.90</td>
-                                    <td>-</td>
-                                </tr>
-                                <tr>
-                                    <td>LR Charges</td>
-                                    <td>VEH</td>
-                                    <td>1.00</td>
-                                    <td>-</td>
-                                    <td>INR</td>
-                                    <td>-</td>
-                                    <td>81.90</td>
-                                    <td>-</td>
-                                </tr>
-                                <tr>
-                                    <td>CE Certificate</td>
-                                    <td>BOE</td>
-                                    <td>1.00</td>
-                                    <td>-</td>
-                                    <td>INR</td>
-                                    <td>-</td>
-                                    <td>81.90</td>
-                                    <td>-</td>
-                                </tr>
-                                <tr>
-                                    <td>Box Opening & Repacking</td>
-                                    <td>BOX</td>
-                                    <td>2.00</td>
-                                    <td>-</td>
-                                    <td>INR</td>
-                                    <td>-</td>
-                                    <td>81.90</td>
-                                    <td>-</td>
-                                </tr>
-                                <tr>
-                                    <td>MHE Charges</td>
-                                    <td>HST</td>
-                                    <td>1.00</td>
-                                    <td>-</td>
-                                    <td>INR</td>
-                                    <td>-</td>
-                                    <td>81.90</td>
-                                    <td>-</td>
-                                </tr>
-                            `}
+                            <tr>
+                                <td>Agency Charges (Used Equipment)</td>
+                                <td>BOE</td>
+                                <td>1.00</td>
+                                <td>-</td>
+                                <td>INR</td>
+                                <td>-</td>
+                                <td>81.90</td>
+                                <td>-</td>
+                            </tr>
+                            <tr>
+                                <td>Outbound Handling at FTWZ</td>
+                                <td>PKG</td>
+                                <td>2.00</td>
+                                <td>-</td>
+                                <td>USD</td>
+                                <td>-</td>
+                                <td>1.00</td>
+                                <td>-</td>
+                            </tr>
+                            <tr>
+                                <td>Transportation Charges (FTWZ to Barmer)</td>
+                                <td>VEH</td>
+                                <td>1.00</td>
+                                <td>-</td>
+                                <td>INR</td>
+                                <td>-</td>
+                                <td>81.90</td>
+                                <td>-</td>
+                            </tr>
+                            <tr>
+                                <td>LR Charges</td>
+                                <td>VEH</td>
+                                <td>1.00</td>
+                                <td>-</td>
+                                <td>INR</td>
+                                <td>-</td>
+                                <td>81.90</td>
+                                <td>-</td>
+                            </tr>
+                            <tr>
+                                <td>CE Certificate</td>
+                                <td>BOE</td>
+                                <td>1.00</td>
+                                <td>-</td>
+                                <td>INR</td>
+                                <td>-</td>
+                                <td>81.90</td>
+                                <td>-</td>
+                            </tr>
+                            <tr>
+                                <td>Box Opening & Repacking (As Per Approval)</td>
+                                <td>BOX</td>
+                                <td>2.00</td>
+                                <td>-</td>
+                                <td>INR</td>
+                                <td>-</td>
+                                <td>81.90</td>
+                                <td>-</td>
+                            </tr>
+                            <tr>
+                                <td>MHE Charges (*ODC)</td>
+                                <td>HST</td>
+                                <td>1.00</td>
+                                <td>-</td>
+                                <td>INR</td>
+                                <td>-</td>
+                                <td>81.90</td>
+                                <td>-</td>
+                            </tr>
                             <tr class="tax-row">
                                 <td colspan="6">IGST</td>
                                 <td>18.00%</td>
@@ -1256,7 +1243,7 @@ function displayInvoiceModal(data) {
                     </table>
                     
                     <div class="packing-details">
-                        <div class="packing-title">Packing List DIMS:</div>
+                        <div class="packing-title">Over Dimension Cargo (ODC) Packing List DIMS:</div>
                         <div class="packing-item">344 x 18 x 30 x 1 | 0.186</div>
                         <div class="packing-item">258 x 38 x 50 x 1 | 0.490</div>
                         <div class="packing-total">TOTAL: 0.676 CBM</div>
@@ -1345,174 +1332,27 @@ function displayInvoiceModal(data) {
                         </div>
                     </div>
                 </div>
-                        <tr>
-                            <td>Documentation Charges</td>
-                            <td>DOC</td>
-                            <td>1.00</td>
-                            <td>-</td>
-                            <td>INR</td>
-                            <td>-</td>
-                            <td>-</td>
-                            <td>81.90</td>
-                        </tr>
-                        <tr>
-                            <td>CFS Certificate</td>
-                            <td>BOE</td>
-                            <td>1.00</td>
-                            <td>-</td>
-                            <td>INR</td>
-                            <td>-</td>
-                            <td>-</td>
-                            <td>81.90</td>
-                        </tr>
-                        <tr>
-                            <td>Misc. Handling & Reporting</td>
-                            <td>BOE</td>
-                            <td>1.00</td>
-                            <td>-</td>
-                            <td>INR</td>
-                            <td>-</td>
-                            <td>-</td>
-                            <td>81.90</td>
-                        </tr>
-                        <tr>
-                            <td>Bank Charges - OOC</td>
-                            <td>BOE</td>
-                            <td>1.00</td>
-                            <td>-</td>
-                            <td>INR</td>
-                            <td>-</td>
-                            <td>-</td>
-                            <td>81.90</td>
-                        </tr>
-                        <tr>
-                            <td colspan="7" class="text-right">* Over Dimension Cargo (ODC)</td>
-                            <td>-</td>
-                        </tr>
-                        <tr>
-                            <td colspan="7" class="text-right">Packing List (DOC)</td>
-                            <td>-</td>
-                        </tr>
-                        <tr>
-                            <td colspan="7" class="text-right">GST on Int'l</td>
-                            <td>0.00</td>
-                        </tr>
-                        <tr>
-                            <td colspan="7" class="text-right">GST on Int'l</td>
-                            <td>0.00</td>
-                        </tr>
-                        <tr>
-                            <td colspan="7" class="text-right">TOTAL</td>
-                            <td>0.00 USD</td>
-                        </tr>
-                    </tbody>
-                </table>
-                
-                <div class="gst-note">* All Rates are being considered without GST</div>
-                
-                <div class="total-value-section">
-                    <div>Total Bill Value (USD)</div>
-                    <div>INR${parseFloat(invoice.total_amount_inr || 0).toFixed(2)}</div>
-                </div>
-                
-                <div class="tax-summary-section">
-                    <table class="tax-table">
-                        <thead>
-                            <tr>
-                                <th>FX Rate</th>
-                                <th>HSN / SAC</th>
-                                <th>IGST %</th>
-                                <th>Taxable (₹)</th>
-                                <th>Taxable ($)</th>
-                                <th>IGST (₹)</th>
-                                <th>IGST ($)</th>
-                                <th>Total (₹)</th>
-                                <th>Total ($)</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td>81.90</td>
-                                <td>996729</td>
-                                <td>18.00%</td>
-                                <td>-</td>
-                                <td>-</td>
-                                <td>-</td>
-                                <td>-</td>
-                                <td>-</td>
-                                <td>-</td>
-                            </tr>
-                            <tr class="total-row">
-                                <td>TOTAL</td>
-                                <td></td>
-                                <td></td>
-                                <td>-</td>
-                                <td>-</td>
-                                <td>-</td>
-                                <td>-</td>
-                                <td>-</td>
-                                <td>-</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-                
-                <div class="invoice-footer">
-                    <div class="declaration">
-                        <p>In words of Zero rupees only / custom please do not treat it as paid until 3 days of receipt of this invoice to your account and keep billing of invoice submitted for your account and keep billing.</p>
-                    </div>
-                    
-                    <div class="bank-details">
-                        <div class="section-title">Our Bank Details for payment:</div>
-                        <div class="bank-info">
-                            <div class="bank-row">
-                                <div class="bank-label">Bank:</div>
-                                <div class="bank-value">ICICI Bank</div>
-                            </div>
-                            <div class="bank-row">
-                                <div class="bank-label">Branch:</div>
-                                <div class="bank-value">Andheri</div>
-                            </div>
-                            <div class="bank-row">
-                                <div class="bank-label">A/c No.:</div>
-                                <div class="bank-value">000000000000</div>
-                            </div>
-                            <div class="bank-row">
-                                <div class="bank-label">Account Name:</div>
-                                <div class="bank-value">ACCEX SUPPLY CHAIN PRIVATE LIMITED</div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="signature-section">
-                        <div class="signature-box">
-                            <div class="signature-line"></div>
-                            <div>Authorized Signature</div>
-                        </div>
-                    </div>
-                    
-                    <div class="registered-office">
-                        Registered Office: 503, First Floor, Satellite Plaza, Saki Vihar Road, Powai, Mumbai - 400072
-                    </div>
-                </div>
             </div>
-        </div>
-        
-        <div class="modal-actions">
-            ${invoice.status === 'draft' ? `
-                <button class="btn btn-success" onclick="finalizeInvoice(${invoice.id})">
-                    <i class="fas fa-check"></i> Finalize Invoice
-                </button>
-            ` : `
+            
+            <!-- Action Buttons -->
+            <div class="modal-actions">
                 <button class="btn btn-primary" onclick="downloadInvoicePDF(${invoice.id})">
                     <i class="fas fa-file-pdf"></i> Download PDF
                 </button>
-            `}
-            <button class="btn btn-secondary" onclick="printInvoice()">
-                <i class="fas fa-print"></i> Print Invoice
-            </button>
+                <button class="btn btn-secondary" onclick="printInvoice()">
+                    <i class="fas fa-print"></i> Print Invoice
+                </button>
+                ${invoice.status === 'draft' ? `
+                    <button class="btn btn-success" onclick="finalizeInvoice(${invoice.id})">
+                        <i class="fas fa-check"></i> Finalize Invoice
+                    </button>
+                ` : ''}
+            </div>
         </div>
     `;
+    
+    // Show the modal
+    invoiceModal.classList.add('show');
 }
 
 function downloadInvoicePDF(invoiceId) {
@@ -1546,54 +1386,99 @@ function downloadInvoicePDF(invoiceId) {
                     border: 1px solid #e2e8f0;
                     background-color: white;
                 }
-                table {
-                    width: 100%;
-                    border-collapse: collapse;
-                    margin: 15px 0;
+                
+                /* ACCEX Logo Styles for PDF */
+                .accex-logo {
+                    display: flex;
+                    align-items: center;
+                    gap: 12px;
+                    font-family: 'Arial', sans-serif;
+                    margin-bottom: 15px;
                 }
-                th, td {
-                    padding: 8px;
-                    text-align: left;
-                    border: 1px solid #000;
+                .logo-symbol {
+                    position: relative;
+                    width: 40px;
+                    height: 40px;
                 }
-                th {
-                    background-color: #f7fafc;
-                    font-weight: 600;
-                    text-align: center;
+                .logo-triangle {
+                    width: 0;
+                    height: 0;
+                    border-left: 20px solid transparent;
+                    border-right: 20px solid transparent;
+                    border-bottom: 35px solid #1e40af;
+                    position: absolute;
+                    top: 0;
+                    left: 0;
                 }
+                .logo-curve {
+                    width: 20px;
+                    height: 20px;
+                    background: #3b82f6;
+                    border-radius: 50%;
+                    position: absolute;
+                    bottom: 0;
+                    right: 0;
+                }
+                .logo-text {
+                    display: flex;
+                    flex-direction: column;
+                }
+                .logo-main {
+                    font-size: 18px;
+                    font-weight: bold;
+                    color: #1e40af;
+                    letter-spacing: 1px;
+                }
+                .logo-subtitle {
+                    font-size: 8px;
+                    color: #6b7280;
+                    font-weight: normal;
+                }
+                
+                /* Invoice Header Print */
                 .invoice-header-print {
                     display: flex;
                     justify-content: space-between;
-                    margin-bottom: 10px;
-                    border: 2px solid #000;
-                    padding: 10px;
+                    align-items: flex-start;
+                    margin-bottom: 30px;
+                    padding-bottom: 20px;
+                    border-bottom: 2px solid #333;
                 }
                 .header-left {
-                    width: 100px;
-                }
-                .company-logo-img {
-                    max-width: 100px;
-                    height: auto;
+                    flex: 1;
                 }
                 .header-right {
                     flex: 1;
-                    padding-left: 20px;
+                    margin-left: 20px;
+                }
+                .company-info {
+                    margin-top: 10px;
                 }
                 .company-name {
-                    font-size: 16px;
-                    font-weight: 700;
+                    font-size: 14px;
+                    font-weight: bold;
                     color: #000;
-                    margin-bottom: 5px;
-                }
-                .company-details-row {
-                    font-size: 12px;
                     margin-bottom: 3px;
+                }
+                .company-subtitle {
+                    font-size: 10px;
+                    color: #666;
+                    margin-bottom: 3px;
+                }
+                .company-address {
+                    font-size: 10px;
+                    color: #666;
+                    margin-bottom: 3px;
+                }
+                .company-website {
+                    font-size: 10px;
+                    color: #666;
                 }
                 .company-details-table {
                     display: grid;
                     grid-template-columns: auto auto;
                     gap: 5px;
-                    margin-top: 5px;
+                    margin-top: 10px;
                 }
                 .details-row {
                     display: flex;
@@ -1603,94 +1488,181 @@ function downloadInvoicePDF(invoiceId) {
                     font-weight: 600;
                     min-width: 120px;
                     padding-right: 10px;
+                    font-size: 10px;
                 }
                 .details-value {
                     flex: 1;
+                    font-size: 10px;
                 }
+                
+                /* Invoice Title */
                 .invoice-title {
                     text-align: center;
-                    font-size: 16px;
-                    font-weight: 700;
+                    font-size: 18px;
+                    font-weight: bold;
                     margin: 20px 0;
                     text-transform: uppercase;
+                    color: #000;
                 }
-                .invoice-details-section {
-                    display: flex;
-                    justify-content: space-between;
+                
+                /* Invoice Details Table */
+                .invoice-details-table {
+                    display: grid;
+                    grid-template-columns: auto auto;
+                    gap: 5px;
                     margin-bottom: 20px;
                     border: 1px solid #000;
                     padding: 10px;
                 }
-                .customer-details, .invoice-details {
-                    flex: 1;
+                
+                /* Customer Details Section */
+                .customer-details-section {
+                    margin-bottom: 20px;
+                    border: 1px solid #000;
+                    padding: 10px;
+                }
+                .customer-info {
+                    margin-bottom: 10px;
                 }
                 .section-title {
-                    font-weight: 600;
+                    font-weight: bold;
                     margin-bottom: 5px;
+                    font-size: 12px;
+                }
+                .customer-name {
+                    font-weight: bold;
+                    margin-bottom: 3px;
+                    font-size: 11px;
+                }
+                .customer-address {
+                    margin-bottom: 3px;
+                    font-size: 10px;
+                }
+                .customer-gstin {
+                    margin-bottom: 3px;
+                    font-size: 10px;
+                }
+                .customer-ref {
+                    font-size: 10px;
+                }
+                
+                /* Service Details Section */
+                .service-details-section {
+                    margin-bottom: 20px;
                 }
                 .invoice-table {
                     width: 100%;
                     border-collapse: collapse;
+                    margin-bottom: 15px;
                 }
                 .invoice-table th, .invoice-table td {
                     border: 1px solid #000;
                     padding: 5px;
-                    font-size: 11px;
+                    font-size: 9px;
+                    text-align: center;
                 }
                 .invoice-table th {
                     background-color: #f0f0f0;
-                    text-align: center;
-                }
-                .text-right {
-                    text-align: right;
                     font-weight: bold;
                 }
-                .gst-note {
-                    font-size: 10px;
-                    margin: 5px 0;
-                    text-align: right;
-                    font-style: italic;
+                .invoice-table .sub-header {
+                    background-color: #f8f9fa;
+                    font-weight: bold;
                 }
-                .total-value-section {
+                .invoice-table .tax-row {
+                    background-color: #f8f9fa;
+                    font-weight: bold;
+                }
+                
+                /* Packing Details */
+                .packing-details {
+                    margin: 15px 0;
+                    padding: 10px;
+                    border: 1px solid #000;
+                }
+                .packing-title {
+                    font-weight: bold;
+                    margin-bottom: 5px;
+                    font-size: 10px;
+                }
+                .packing-item {
+                    margin-bottom: 3px;
+                    font-size: 9px;
+                }
+                .packing-total {
+                    font-weight: bold;
+                    margin-top: 5px;
+                    font-size: 10px;
+                }
+                .fx-note {
+                    font-size: 8px;
+                    font-style: italic;
+                    margin-top: 5px;
+                }
+                
+                /* Summary Section */
+                .summary-section {
+                    margin-bottom: 20px;
+                }
+                .total-bill {
                     display: flex;
                     justify-content: space-between;
-                    margin: 10px 0;
+                    align-items: center;
+                    margin-bottom: 15px;
+                    padding: 10px;
+                    border: 2px solid #000;
                     font-weight: bold;
-                    border: 1px solid #000;
-                    padding: 5px 10px;
+                    font-size: 12px;
                 }
-                .tax-summary-section {
-                    margin: 20px 0;
+                .total-label {
+                    font-size: 12px;
                 }
-                .tax-table {
+                .total-value {
+                    font-size: 14px;
+                }
+                .summary-table {
                     width: 100%;
                     border-collapse: collapse;
                 }
-                .tax-table th, .tax-table td {
+                .summary-table th, .summary-table td {
                     border: 1px solid #000;
                     padding: 5px;
+                    font-size: 9px;
                     text-align: center;
-                    font-size: 11px;
                 }
-                .tax-table .total-row {
+                .summary-table th {
+                    background-color: #f0f0f0;
                     font-weight: bold;
                 }
-                .invoice-footer {
+                .summary-table .total-row {
+                    font-weight: bold;
+                    background-color: #f8f9fa;
+                }
+                
+                /* Footer Section */
+                .footer-section {
                     margin-top: 20px;
                 }
                 .declaration {
-                    font-size: 10px;
+                    font-size: 9px;
                     margin: 10px 0;
+                    text-align: justify;
                 }
                 .bank-details {
                     border: 1px solid #000;
                     padding: 10px;
                     margin: 10px 0;
                 }
+                .bank-title {
+                    font-weight: bold;
+                    margin-bottom: 10px;
+                    font-size: 11px;
+                }
                 .bank-info {
                     display: grid;
                     grid-template-columns: repeat(2, 1fr);
                     gap: 5px;
+                    margin-bottom: 10px;
                 }
                 .bank-row {
                     display: flex;
@@ -1698,34 +1670,40 @@ function downloadInvoicePDF(invoiceId) {
                 .bank-label {
                     font-weight: 600;
                     min-width: 80px;
-                }
-                .signature-section {
-                    margin-top: 30px;
-                    display: flex;
-                    justify-content: flex-end;
-                }
-                .signature-box {
-                    text-align: center;
-                }
-                .signature-line {
-                    width: 200px;
-                    border-top: 1px solid #000;
-                    margin-bottom: 5px;
-                }
-                .registered-office {
                     font-size: 9px;
-                    text-align: center;
+                }
+                .bank-value {
+                    flex: 1;
+                    font-size: 9px;
+                }
+                .signatory {
+                    text-align: right;
+                    font-weight: bold;
+                    margin-top: 10px;
+                    font-size: 10px;
+                }
+                .company-footer {
                     margin-top: 20px;
                 }
-                .modal-actions {
-                    display: none;
+                .registered-office {
+                    font-size: 8px;
+                    text-align: center;
+                    margin-bottom: 10px;
                 }
+                .startup-recognition {
+                    font-size: 8px;
+                    text-align: center;
+                    font-style: italic;
+                }
+                
+                /* Hide modal elements in PDF */
+                .modal-actions, .modal-header, .modal-close {
+                    display: none !important;
+                }
+                
                 @media print {
                     body * {
                         visibility: visible;
-                    }
-                    .modal-actions, .modal-header, .modal-close {
-                        display: none !important;
                     }
                     .invoice-container {
                         border: none !important;
@@ -1791,16 +1769,377 @@ function closeModal() {
 
 // Function to print the current invoice
 function printInvoice() {
-    // Apply print-specific styles
-    document.body.classList.add('printing');
+    // Get the invoice modal content
+    const invoiceContent = document.querySelector('.invoice-container');
     
-    // Print the document
-    window.print();
+    // Create a new window for printing
+    const printWindow = window.open('', '_blank');
     
-    // Remove print-specific styles after printing
-    setTimeout(() => {
-        document.body.classList.remove('printing');
-    }, 1000);
+    // Add necessary styles for printing
+    printWindow.document.write(`
+        <html>
+        <head>
+            <title>Invoice Print</title>
+            <style>
+                @page {
+                    size: A4;
+                    margin: 0;
+                }
+                body {
+                    font-family: Arial, sans-serif;
+                    margin: 0;
+                    padding: 20px;
+                    background-color: white;
+                    font-size: 12px;
+                }
+                .invoice-container {
+                    max-width: 800px;
+                    margin: 0 auto;
+                    padding: 20px;
+                    background-color: white;
+                }
+                
+                /* ACCEX Logo Styles for Print */
+                .accex-logo {
+                    display: flex;
+                    align-items: center;
+                    gap: 12px;
+                    font-family: 'Arial', sans-serif;
+                    margin-bottom: 15px;
+                }
+                .logo-symbol {
+                    position: relative;
+                    width: 40px;
+                    height: 40px;
+                }
+                .logo-triangle {
+                    width: 0;
+                    height: 0;
+                    border-left: 20px solid transparent;
+                    border-right: 20px solid transparent;
+                    border-bottom: 35px solid #1e40af;
+                    position: absolute;
+                    top: 0;
+                    left: 0;
+                }
+                .logo-curve {
+                    width: 20px;
+                    height: 20px;
+                    background: #3b82f6;
+                    border-radius: 50%;
+                    position: absolute;
+                    bottom: 0;
+                    right: 0;
+                }
+                .logo-text {
+                    display: flex;
+                    flex-direction: column;
+                }
+                .logo-main {
+                    font-size: 18px;
+                    font-weight: bold;
+                    color: #1e40af;
+                    letter-spacing: 1px;
+                }
+                .logo-subtitle {
+                    font-size: 8px;
+                    color: #6b7280;
+                    font-weight: normal;
+                }
+                
+                /* Invoice Header Print */
+                .invoice-header-print {
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: flex-start;
+                    margin-bottom: 30px;
+                    padding-bottom: 20px;
+                    border-bottom: 2px solid #333;
+                }
+                .header-left {
+                    flex: 1;
+                }
+                .header-right {
+                    flex: 1;
+                    margin-left: 20px;
+                }
+                .company-info {
+                    margin-top: 10px;
+                }
+                .company-name {
+                    font-size: 14px;
+                    font-weight: bold;
+                    color: #000;
+                    margin-bottom: 3px;
+                }
+                .company-subtitle {
+                    font-size: 10px;
+                    color: #666;
+                    margin-bottom: 3px;
+                }
+                .company-address {
+                    font-size: 10px;
+                    color: #666;
+                    margin-bottom: 3px;
+                }
+                .company-website {
+                    font-size: 10px;
+                    color: #666;
+                }
+                .company-details-table {
+                    display: grid;
+                    grid-template-columns: auto auto;
+                    gap: 5px;
+                    margin-top: 10px;
+                }
+                .details-row {
+                    display: flex;
+                    margin-bottom: 3px;
+                }
+                .details-label {
+                    font-weight: 600;
+                    min-width: 120px;
+                    padding-right: 10px;
+                    font-size: 10px;
+                }
+                .details-value {
+                    flex: 1;
+                    font-size: 10px;
+                }
+                
+                /* Invoice Title */
+                .invoice-title {
+                    text-align: center;
+                    font-size: 18px;
+                    font-weight: bold;
+                    margin: 20px 0;
+                    text-transform: uppercase;
+                    color: #000;
+                }
+                
+                /* Invoice Details Table */
+                .invoice-details-table {
+                    display: grid;
+                    grid-template-columns: auto auto;
+                    gap: 5px;
+                    margin-bottom: 20px;
+                    border: 1px solid #000;
+                    padding: 10px;
+                }
+                
+                /* Customer Details Section */
+                .customer-details-section {
+                    margin-bottom: 20px;
+                    border: 1px solid #000;
+                    padding: 10px;
+                }
+                .customer-info {
+                    margin-bottom: 10px;
+                }
+                .section-title {
+                    font-weight: bold;
+                    margin-bottom: 5px;
+                    font-size: 12px;
+                }
+                .customer-name {
+                    font-weight: bold;
+                    margin-bottom: 3px;
+                    font-size: 11px;
+                }
+                .customer-address {
+                    margin-bottom: 3px;
+                    font-size: 10px;
+                }
+                .customer-gstin {
+                    margin-bottom: 3px;
+                    font-size: 10px;
+                }
+                .customer-ref {
+                    font-size: 10px;
+                }
+                
+                /* Service Details Section */
+                .service-details-section {
+                    margin-bottom: 20px;
+                }
+                .invoice-table {
+                    width: 100%;
+                    border-collapse: collapse;
+                    margin-bottom: 15px;
+                }
+                .invoice-table th, .invoice-table td {
+                    border: 1px solid #000;
+                    padding: 5px;
+                    font-size: 9px;
+                    text-align: center;
+                }
+                .invoice-table th {
+                    background-color: #f0f0f0;
+                    font-weight: bold;
+                }
+                .invoice-table .sub-header {
+                    background-color: #f8f9fa;
+                    font-weight: bold;
+                }
+                .invoice-table .tax-row {
+                    background-color: #f8f9fa;
+                    font-weight: bold;
+                }
+                
+                /* Packing Details */
+                .packing-details {
+                    margin: 15px 0;
+                    padding: 10px;
+                    border: 1px solid #000;
+                }
+                .packing-title {
+                    font-weight: bold;
+                    margin-bottom: 5px;
+                    font-size: 10px;
+                }
+                .packing-item {
+                    margin-bottom: 3px;
+                    font-size: 9px;
+                }
+                .packing-total {
+                    font-weight: bold;
+                    margin-top: 5px;
+                    font-size: 10px;
+                }
+                .fx-note {
+                    font-size: 8px;
+                    font-style: italic;
+                    margin-top: 5px;
+                }
+                
+                /* Summary Section */
+                .summary-section {
+                    margin-bottom: 20px;
+                }
+                .total-bill {
+                    display: flex;
+                    justify-content: space-between;
+                    align-items: center;
+                    margin-bottom: 15px;
+                    padding: 10px;
+                    border: 2px solid #000;
+                    font-weight: bold;
+                    font-size: 12px;
+                }
+                .total-label {
+                    font-size: 12px;
+                }
+                .total-value {
+                    font-size: 14px;
+                }
+                .summary-table {
+                    width: 100%;
+                    border-collapse: collapse;
+                }
+                .summary-table th, .summary-table td {
+                    border: 1px solid #000;
+                    padding: 5px;
+                    font-size: 9px;
+                    text-align: center;
+                }
+                .summary-table th {
+                    background-color: #f0f0f0;
+                    font-weight: bold;
+                }
+                .summary-table .total-row {
+                    font-weight: bold;
+                    background-color: #f8f9fa;
+                }
+                
+                /* Footer Section */
+                .footer-section {
+                    margin-top: 20px;
+                }
+                .declaration {
+                    font-size: 9px;
+                    margin: 10px 0;
+                    text-align: justify;
+                }
+                .bank-details {
+                    border: 1px solid #000;
+                    padding: 10px;
+                    margin: 10px 0;
+                }
+                .bank-title {
+                    font-weight: bold;
+                    margin-bottom: 10px;
+                    font-size: 11px;
+                }
+                .bank-info {
+                    display: grid;
+                    grid-template-columns: repeat(2, 1fr);
+                    gap: 5px;
+                    margin-bottom: 10px;
+                }
+                .bank-row {
+                    display: flex;
+                }
+                .bank-label {
+                    font-weight: 600;
+                    min-width: 80px;
+                    font-size: 9px;
+                }
+                .bank-value {
+                    flex: 1;
+                    font-size: 9px;
+                }
+                .signatory {
+                    text-align: right;
+                    font-weight: bold;
+                    margin-top: 10px;
+                    font-size: 10px;
+                }
+                .company-footer {
+                    margin-top: 20px;
+                }
+                .registered-office {
+                    font-size: 8px;
+                    text-align: center;
+                    margin-bottom: 10px;
+                }
+                .startup-recognition {
+                    font-size: 8px;
+                    text-align: center;
+                    font-style: italic;
+                }
+                
+                /* Hide modal elements in print */
+                .modal-actions, .modal-header, .modal-close {
+                    display: none !important;
+                }
+                
+                @media print {
+                    body * {
+                        visibility: visible;
+                    }
+                    .invoice-container {
+                        border: none !important;
+                        box-shadow: none !important;
+                        padding: 0;
+                    }
+                    .invoice-print {
+                        padding: 0;
+                    }
+                }
+            </style>
+        </head>
+        <body>
+            ${invoiceContent.outerHTML}
+        </body>
+        </html>
+    `);
+    
+    // Print and close the window after loading
+    printWindow.document.close();
+    printWindow.onload = function() {
+        printWindow.print();
+        // printWindow.close(); // Uncomment to auto-close after print dialog
+    };
 }
 
 // Dashboard functions
@@ -2042,4 +2381,5 @@ document.head.appendChild(styleSheet);
 window.showInvoiceModal = showInvoiceModal;
 window.finalizeInvoice = finalizeInvoice;
 window.downloadInvoicePDF = downloadInvoicePDF;
+window.printInvoice = printInvoice;
 window.printInvoice = printInvoice;

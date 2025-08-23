@@ -762,7 +762,7 @@ app.post('/api/shipments', (req, res) => {
 
     db.query(sql, [
         shipment_type, shipment_subtype, asc_number, sh_number, ref_number, customer_id,
-        cbm, odc, lengthValue, breadthValue, heightValue, packagesValue, 1
+        cbm, odc, lengthValue, breadthValue, heightValue, packagesValue, req.session.userId || 1
     ], function(err, result) {
         if (err) {
             console.error('Shipment creation error:', err);
@@ -789,15 +789,17 @@ app.post('/api/shipments', (req, res) => {
         const invoiceSql = `INSERT INTO invoices (
             invoice_number, shipment_id, customer_id, invoice_date, due_date,
             place_of_supply, gstin_recipient, state, state_code, 
+            po_reference, slb_reference, reverse_charge,
             subtotal_usd, subtotal_inr, igst_amount_usd, igst_amount_inr,
             total_usd, total_inr, fx_rate, status, created_by
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
         
         db.query(invoiceSql, [
             invoiceNo, shipmentId, customer_id, invoiceDate, invoiceDate,
             'Maharashtra', '', 'Maharashtra', '27',
+            'Contract', 'S-202919/REW', 'No',
             baseAmountUSD, baseAmountINR, igstAmountUSD, igstAmountINR,
-            totalAmountUSD, totalAmountINR, fxRate, 'draft', 1
+            totalAmountUSD, totalAmountINR, fxRate, 'draft', req.session.userId || 1
         ], function(err, result) {
             if (err) {
                 console.error('Invoice creation error:', err);
@@ -840,12 +842,12 @@ app.post('/api/shipments', (req, res) => {
                 
                 const itemSql = `INSERT INTO invoice_items (
                     invoice_id, description, uom, quantity, rate, currency,
-                    fx_rate, amount_usd, hsn_sac, igst_percentage, igst_amount_usd, igst_amount_inr
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+                    fx_rate, amount_usd, amount_inr, hsn_sac, igst_percent, igst_amount_usd, igst_amount_inr
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
                 
                 db.query(itemSql, [
                     invoiceId, item.description, item.uom, item.quantity, item.rate, item.currency,
-                    fxRate, amountUSD, item.hsn_sac, 18.00, igstUSD, igstINR
+                    fxRate, amountUSD, amountINR, item.hsn_sac, 18.00, igstUSD, igstINR
                 ], function(err, result) {
                     if (err) {
                         console.error('Invoice item creation error:', err);
@@ -950,7 +952,39 @@ app.get('/api/invoices/:id', (req, res) => {
     });
 });
 
-// Finalize invoice API
+// Update invoice status
+app.put('/api/invoices/:id/status', (req, res) => {
+    const invoiceId = req.params.id;
+    const { status } = req.body;
+    
+    if (!status || !['draft', 'finalized', 'cancelled'].includes(status)) {
+        return res.status(400).json({ error: 'Invalid status. Must be draft, finalized, or cancelled' });
+    }
+    
+    const sql = `UPDATE invoices SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?`;
+    
+    db.query(sql, [status, invoiceId], (err, result) => {
+        if (err) {
+            console.error('Error updating invoice status:', err);
+            return res.status(500).json({ error: 'Database error' });
+        }
+        
+        if (result.affectedRows === 0) {
+            return res.status(404).json({ error: 'Invoice not found' });
+        }
+        
+        res.json({
+            success: true,
+            message: `Invoice status updated to ${status}`,
+            invoice: {
+                id: invoiceId,
+                status: status
+            }
+        });
+    });
+});
+
+// Finalize invoice (existing function with improved error handling)
 app.post('/api/invoices/:id/finalize', (req, res) => {
     const invoiceId = req.params.id;
     
@@ -964,6 +998,46 @@ app.post('/api/invoices/:id/finalize', (req, res) => {
         }
         
         res.json({ success: true, message: 'Invoice finalized successfully' });
+    });
+});
+
+// Get invoice status
+app.get('/api/invoices/:id/status', (req, res) => {
+    const invoiceId = req.params.id;
+    
+    const sql = `SELECT status, invoice_number, created_at, updated_at FROM invoices WHERE id = ?`;
+    
+    db.query(sql, [invoiceId], (err, results) => {
+        if (err) {
+            console.error('Error fetching invoice status:', err);
+            return res.status(500).json({ error: 'Database error' });
+        }
+        
+        if (results.length === 0) {
+            return res.status(404).json({ error: 'Invoice not found' });
+        }
+        
+        res.json({
+            success: true,
+            invoice: results[0]
+        });
+    });
+});
+
+// Get all invoices with status
+app.get('/api/invoices', (req, res) => {
+    db.query(`
+        SELECT i.*, c.company_name, c.gstin, s.shipment_type, s.shipment_subtype
+        FROM invoices i
+        LEFT JOIN shipments s ON i.shipment_id = s.id
+        LEFT JOIN customers c ON s.customer_id = c.id
+        ORDER BY i.created_at DESC
+    `, (err, invoices) => {
+        if (err) {
+            console.error('Error fetching invoices with status:', err);
+            return res.status(500).json({ error: 'Database error' });
+        }
+        res.json(invoices);
     });
 });
 

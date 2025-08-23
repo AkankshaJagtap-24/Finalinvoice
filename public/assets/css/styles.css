@@ -243,15 +243,22 @@ a:hover {
   font-size: 24px;
   font-weight: bold;
   line-height: 1;
-}
-
-.logo-main::before {
-  content: "ACC";
   color: #1e3a8a;
 }
 
+.logo-main::before {
+  content: "";
+}
+
 .logo-main::after {
-  content: "EX";
+  content: "";
+}
+
+.logo-acc {
+  color: #1e3a8a;
+}
+
+.logo-ex {
   color: #dc2626;
 }
 
