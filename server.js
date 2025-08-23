@@ -450,33 +450,33 @@ app.post('/api/signup', (req, res) => {
     const { name, email, password } = req.body;
     
     // Check if user already exists
-    db.get('SELECT * FROM users WHERE email = ?', [email], (err, existingUser) => {
+    db.query('SELECT * FROM users WHERE email = ?', [email], (err, results) => {
         if (err) {
             return res.status(500).json({ error: 'Database error' });
         }
         
-        if (existingUser) {
+        if (results.length > 0) {
             return res.status(400).json({ error: 'User with this email already exists' });
         }
         
         // Hash password and create new user
         const hashedPassword = bcrypt.hashSync(password, 10);
         
-        db.run('INSERT INTO users (name, email, password) VALUES (?, ?, ?)', 
-            [name, email, hashedPassword], function(err) {
+        db.query('INSERT INTO users (name, email, password) VALUES (?, ?, ?)', 
+            [name, email, hashedPassword], (err, result) => {
             if (err) {
                 return res.status(500).json({ error: 'Failed to create user' });
             }
             
             // Auto-login the new user
-            req.session.userId = this.lastID;
+            req.session.userId = result.insertId;
             req.session.userEmail = email;
             req.session.userName = name;
             
             res.json({ 
                 success: true, 
                 user: { 
-                    id: this.lastID, 
+                    id: result.insertId, 
                     email: email, 
                     name: name 
                 },
@@ -636,16 +636,16 @@ app.put('/api/customers/:id', requireAuth, (req, res) => {
         updated_at = CURRENT_TIMESTAMP
         WHERE id = ?`;
 
-    db.run(sql, [
+    db.query(sql, [
         company_name.trim(), gstin, boe, new_ton, address, contact_person,
         phone, email, state_code, state_name, customerId
-    ], function(err) {
+    ], (err, result) => {
         if (err) {
             console.error('Customer update error:', err);
             return res.status(500).json({ error: 'Database error' });
         }
         
-        if (this.changes === 0) {
+        if (result.affectedRows === 0) {
             return res.status(404).json({ error: 'Customer not found' });
         }
         
@@ -661,12 +661,12 @@ app.delete('/api/customers/:id', requireAuth, (req, res) => {
     const customerId = req.params.id;
     
     // Check if customer has associated shipments
-    db.get('SELECT COUNT(*) as count FROM shipments WHERE customer_id = ?', [customerId], (err, result) => {
+    db.query('SELECT COUNT(*) as count FROM shipments WHERE customer_id = ?', [customerId], (err, results) => {
         if (err) {
             return res.status(500).json({ error: 'Database error' });
         }
         
-        if (result.count > 0) {
+        if (results[0].count > 0) {
             return res.status(400).json({ 
                 error: 'Cannot delete customer with existing shipments. Use soft delete instead.' 
             });
@@ -922,20 +922,22 @@ app.get('/api/invoices/:id', (req, res) => {
     const invoiceId = req.params.id;
     
     // Get invoice header
-    db.get(`SELECT i.*, s.shipment_type, s.shipment_subtype, c.*
+    db.query(`SELECT i.*, s.shipment_type, s.shipment_subtype, c.*
             FROM invoices i
             LEFT JOIN shipments s ON i.shipment_id = s.id
             LEFT JOIN customers c ON s.customer_id = c.id
-            WHERE i.id = ?`, [invoiceId], (err, invoice) => {
+            WHERE i.id = ?`, [invoiceId], (err, results) => {
         if (err) {
             return res.status(500).json({ error: 'Database error' });
         }
-        if (!invoice) {
+        if (results.length === 0) {
             return res.status(404).json({ error: 'Invoice not found' });
         }
         
+        const invoice = results[0];
+        
         // Get invoice items
-        db.all('SELECT * FROM invoice_items WHERE invoice_id = ?', [invoiceId], (err, items) => {
+        db.query('SELECT * FROM invoice_items WHERE invoice_id = ?', [invoiceId], (err, items) => {
             if (err) {
                 return res.status(500).json({ error: 'Database error' });
             }
@@ -949,15 +951,15 @@ app.get('/api/invoices/:id', (req, res) => {
 });
 
 // Finalize invoice API
-app.post('/api/invoices/:id/finalize', requireAuth, (req, res) => {
+app.post('/api/invoices/:id/finalize', (req, res) => {
     const invoiceId = req.params.id;
     
-    db.run('UPDATE invoices SET status = ? WHERE id = ?', ['finalized', invoiceId], function(err) {
+    db.query('UPDATE invoices SET status = ? WHERE id = ?', ['finalized', invoiceId], (err, result) => {
         if (err) {
             return res.status(500).json({ error: 'Database error' });
         }
         
-        if (this.changes === 0) {
+        if (result.affectedRows === 0) {
             return res.status(404).json({ error: 'Invoice not found' });
         }
         

@@ -1047,7 +1047,16 @@ function displayInvoiceModal(data) {
                 <!-- Company Header with Logo -->
                 <div class="invoice-header-print">
                     <div class="header-left">
-                        <img src="image.png" alt="ACCEX Logo" class="company-logo-img">
+                        <div class="accex-logo">
+                            <div class="logo-symbol">
+                                <div class="logo-triangle"></div>
+                                <div class="logo-curve"></div>
+                            </div>
+                            <div class="logo-text">
+                                <div class="logo-main">ACCEX</div>
+                                <div class="logo-subtitle">Supply Chain Solutions</div>
+                            </div>
+                        </div>
                         <div class="company-info">
                             <div class="company-name">ACCEX SUPPLY CHAIN PRIVATE LIMITED</div>
                             <div class="company-subtitle">EKA: ACCEX SUPPLY CHAIN AND WAREHOUSING PRIVATE LIMITED</div>

@@ -198,6 +198,101 @@ a:hover {
   width: auto;
 }
 
+/* ACCEX Logo Styles */
+.accex-logo {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-family: 'Arial', sans-serif;
+}
+
+.logo-symbol {
+  position: relative;
+  width: 40px;
+  height: 40px;
+}
+
+.logo-triangle {
+  width: 0;
+  height: 0;
+  border-left: 20px solid transparent;
+  border-right: 20px solid transparent;
+  border-bottom: 35px solid #1e3a8a;
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
+.logo-curve {
+  width: 12px;
+  height: 12px;
+  background: #dc2626;
+  border-radius: 50%;
+  position: absolute;
+  bottom: 8px;
+  right: 8px;
+  transform: translate(50%, 50%);
+}
+
+.logo-text {
+  display: flex;
+  flex-direction: column;
+}
+
+.logo-main {
+  font-size: 24px;
+  font-weight: bold;
+  line-height: 1;
+}
+
+.logo-main::before {
+  content: "ACC";
+  color: #1e3a8a;
+}
+
+.logo-main::after {
+  content: "EX";
+  color: #dc2626;
+}
+
+.logo-subtitle {
+  font-size: 10px;
+  color: #1e3a8a;
+  font-weight: normal;
+  margin-top: 2px;
+}
+
+/* Invoice Logo Styles */
+.invoice-header-print .accex-logo {
+  margin-right: 20px;
+}
+
+.invoice-header-print .logo-symbol {
+  width: 50px;
+  height: 50px;
+}
+
+.invoice-header-print .logo-triangle {
+  border-left: 25px solid transparent;
+  border-right: 25px solid transparent;
+  border-bottom: 43px solid #1e3a8a;
+}
+
+.invoice-header-print .logo-curve {
+  width: 15px;
+  height: 15px;
+  bottom: 10px;
+  right: 10px;
+}
+
+.invoice-header-print .logo-main {
+  font-size: 28px;
+}
+
+.invoice-header-print .logo-subtitle {
+  font-size: 12px;
+}
+
 .login-header p {
   color: var(--text-medium);
   font-size: 0.95rem;
@@ -1024,8 +1119,342 @@ select:focus {
 }
 
 .invoice-header-print {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 30px;
+  padding-bottom: 20px;
+  border-bottom: 2px solid #333;
+}
+
+.header-left {
+  display: flex;
+  align-items: flex-start;
+  gap: 20px;
+  flex: 1;
+}
+
+.header-right {
+  flex: 0 0 auto;
+}
+
+.company-info {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.company-name {
+  font-size: 18px;
+  font-weight: bold;
+  color: #333;
+  line-height: 1.2;
+}
+
+.company-subtitle {
+  font-size: 14px;
+  color: #666;
+  font-weight: normal;
+}
+
+.company-address {
+  font-size: 12px;
+  color: #666;
+  line-height: 1.3;
+}
+
+.company-website {
+  font-size: 12px;
+  color: #666;
+  font-weight: 500;
+}
+
+.company-details-table {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  font-size: 11px;
+}
+
+.details-row {
+  display: flex;
+  gap: 10px;
+}
+
+.details-label {
+  font-weight: bold;
+  color: #333;
+  min-width: 80px;
+}
+
+.details-value {
+  color: #666;
+}
+
+.invoice-title {
   text-align: center;
-  margin-bottom: var(--spacing-md);
+  font-size: 24px;
+  font-weight: bold;
+  margin: 20px 0;
+  color: #333;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+}
+
+.invoice-details-table {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  margin-bottom: 20px;
+  font-size: 12px;
+}
+
+.customer-details-section {
+  margin-bottom: 20px;
+}
+
+.customer-info {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.section-title {
+  font-weight: bold;
+  color: #333;
+  font-size: 14px;
+  margin-bottom: 5px;
+}
+
+.customer-name {
+  font-size: 14px;
+  font-weight: bold;
+  color: #333;
+  line-height: 1.3;
+}
+
+.customer-address {
+  font-size: 12px;
+  color: #666;
+  line-height: 1.3;
+}
+
+.customer-gstin {
+  font-size: 12px;
+  color: #666;
+}
+
+.customer-ref {
+  font-size: 12px;
+  color: #666;
+}
+
+.service-details-section {
+  margin-bottom: 20px;
+}
+
+.invoice-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 11px;
+  margin-bottom: 15px;
+}
+
+.invoice-table th {
+  background: #f5f5f5;
+  padding: 8px 5px;
+  text-align: left;
+  font-weight: bold;
+  color: #333;
+  border: 1px solid #ddd;
+}
+
+.invoice-table td {
+  padding: 6px 5px;
+  border: 1px solid #ddd;
+  color: #666;
+  vertical-align: top;
+}
+
+.invoice-table .sub-header {
+  background: #f9f9f9;
+  font-weight: bold;
+  color: #333;
+}
+
+.invoice-table .tax-row {
+  background: #f5f5f5;
+  font-weight: bold;
+  color: #333;
+}
+
+.packing-details {
+  margin: 15px 0;
+  padding: 10px;
+  background: #f9f9f9;
+  border-radius: 4px;
+}
+
+.packing-title {
+  font-weight: bold;
+  color: #333;
+  font-size: 12px;
+  margin-bottom: 5px;
+}
+
+.packing-item {
+  font-size: 11px;
+  color: #666;
+  margin-bottom: 2px;
+}
+
+.packing-total {
+  font-weight: bold;
+  color: #333;
+  font-size: 12px;
+  margin-top: 5px;
+}
+
+.fx-note {
+  font-size: 10px;
+  color: #666;
+  font-style: italic;
+  margin-top: 10px;
+}
+
+.summary-section {
+  margin-bottom: 20px;
+}
+
+.total-bill {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+  padding: 10px;
+  background: #f5f5f5;
+  border-radius: 4px;
+}
+
+.total-label {
+  font-weight: bold;
+  color: #333;
+  font-size: 14px;
+}
+
+.total-value {
+  font-weight: bold;
+  color: #333;
+  font-size: 16px;
+}
+
+.summary-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 11px;
+}
+
+.summary-table th {
+  background: #f5f5f5;
+  padding: 8px 5px;
+  text-align: left;
+  font-weight: bold;
+  color: #333;
+  border: 1px solid #ddd;
+}
+
+.summary-table td {
+  padding: 6px 5px;
+  border: 1px solid #ddd;
+  color: #666;
+}
+
+.summary-table .total-row {
+  background: #f0f0f0;
+  font-weight: bold;
+  color: #333;
+}
+
+.footer-section {
+  margin-top: 30px;
+  padding-top: 20px;
+  border-top: 1px solid #ddd;
+}
+
+.declaration {
+  font-size: 11px;
+  color: #666;
+  line-height: 1.4;
+  margin-bottom: 20px;
+  padding: 10px;
+  background: #f9f9f9;
+  border-radius: 4px;
+}
+
+.bank-details {
+  margin-bottom: 20px;
+}
+
+.bank-title {
+  font-weight: bold;
+  color: #333;
+  font-size: 14px;
+  margin-bottom: 5px;
+}
+
+.bank-subtitle {
+  font-size: 12px;
+  color: #666;
+  margin-bottom: 10px;
+}
+
+.bank-info {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  margin-bottom: 15px;
+}
+
+.bank-row {
+  display: flex;
+  gap: 10px;
+  font-size: 11px;
+}
+
+.bank-label {
+  font-weight: bold;
+  color: #333;
+  min-width: 60px;
+}
+
+.bank-value {
+  color: #666;
+}
+
+.signatory {
+  font-weight: bold;
+  color: #333;
+  font-size: 12px;
+  margin-top: 20px;
+  text-align: right;
+}
+
+.company-footer {
+  margin-top: 20px;
+}
+
+.registered-office {
+  font-size: 11px;
+  color: #666;
+  line-height: 1.3;
+  margin-bottom: 10px;
+}
+
+.startup-recognition {
+  font-size: 10px;
+  color: #666;
+  line-height: 1.3;
+  font-style: italic;
 }
 
 .company-name {
