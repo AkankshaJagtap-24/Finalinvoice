@@ -233,6 +233,24 @@ function insertSampleData() {
             }
         });
     
+    // Insert additional sample users
+    const sampleUsers = [
+        ['Manager User', 'manager@accex.com', bcrypt.hashSync('manager123', 10), 'manager'],
+        ['User One', 'user1@accex.com', bcrypt.hashSync('user123', 10), 'user'],
+        ['User Two', 'user2@accex.com', bcrypt.hashSync('user123', 10), 'user']
+    ];
+    
+    sampleUsers.forEach(user => {
+        db.query(`INSERT IGNORE INTO users (name, email, password, role) VALUES (?, ?, ?, ?)`, 
+            user, (err) => {
+                if (err && !err.message.includes('Duplicate entry')) {
+                    console.error('Error inserting user:', err);
+                } else {
+                    console.log(`User ${user[0]} created successfully`);
+                }
+            });
+    });
+    
     // Insert sample customers
     const sampleCustomers = [
         ['SCHLUMBERGER ASIA SERVICES LIMITED', '27AADCS1107J1ZK', 'BOE001234', 'NT001', 'P-21, TTC INDUSTRIAL AREA, THANE BELAPUR ROAD, MIDC MAHAPE, THANE, MAHARASHTRA - 400710, INDIA', 'John Smith', '+91-22-1234-5678', 'john.smith@slb.com', '27', 'Maharashtra'],
@@ -255,7 +273,11 @@ function insertSampleData() {
     }, 2000); // Increased delay to ensure customers are created first
     
     console.log('Sample data inserted successfully');
-    console.log('Default user: admin@123.com / admin');
+    console.log('Available users for login:');
+    console.log('- admin@123.com / admin (Admin User)');
+    console.log('- manager@accex.com / manager123 (Manager User)');
+    console.log('- user1@accex.com / user123 (User One)');
+    console.log('- user2@accex.com / user123 (User Two)');
 }
 
 // Function to insert default invoice
@@ -398,34 +420,25 @@ app.post('/api/login', (req, res) => {
             return res.status(400).json({ error: 'Email and password are required' });
         }
         
-        // Demo login - check against hardcoded credentials
-        if (email === 'admin@123.com' && password === 'admin') {
-            req.session.userId = 1;
-            req.session.userEmail = email;
-            req.session.userName = 'Admin User';
-            
-            return res.json({ 
-                success: true, 
-                user: { 
-                    id: 1, 
-                    email: email, 
-                    name: 'Admin User' 
-                } 
-            });
-        }
-        
-        // If not demo credentials, try database
+        // Check database for user credentials
         db.query('SELECT * FROM users WHERE email = ?', [email], (err, results) => {
             if (err) {
                 console.error('Database error:', err);
                 return res.status(500).json({ error: 'Database error' });
             }
             
-            if (results.length === 0 || !bcrypt.compareSync(password, results[0].password)) {
+            if (results.length === 0) {
                 return res.status(401).json({ error: 'Invalid credentials' });
             }
             
             const user = results[0];
+            
+            // Check password
+            if (!bcrypt.compareSync(password, user.password)) {
+                return res.status(401).json({ error: 'Invalid credentials' });
+            }
+            
+            // Set session
             req.session.userId = user.id;
             req.session.userEmail = user.email;
             req.session.userName = user.name;
@@ -906,9 +919,11 @@ app.get('/api/shipments', (req, res) => {
 // Get invoices API
 app.get('/api/invoices', (req, res) => {
     db.query(`
-        SELECT i.*, c.company_name, c.gstin 
-        FROM invoices i 
-        LEFT JOIN customers c ON i.customer_id = c.id 
+        SELECT i.*, c.company_name, c.gstin, s.shipment_type, s.shipment_subtype, u.name as created_by_name
+        FROM invoices i
+        LEFT JOIN shipments s ON i.shipment_id = s.id
+        LEFT JOIN customers c ON s.customer_id = c.id
+        LEFT JOIN users u ON i.created_by = u.id
         ORDER BY i.created_at DESC
     `, (err, invoices) => {
         if (err) {
@@ -924,10 +939,11 @@ app.get('/api/invoices/:id', (req, res) => {
     const invoiceId = req.params.id;
     
     // Get invoice header
-    db.query(`SELECT i.*, s.shipment_type, s.shipment_subtype, c.*
+    db.query(`SELECT i.*, s.shipment_type, s.shipment_subtype, c.*, u.name as created_by_name
             FROM invoices i
             LEFT JOIN shipments s ON i.shipment_id = s.id
             LEFT JOIN customers c ON s.customer_id = c.id
+            LEFT JOIN users u ON i.created_by = u.id
             WHERE i.id = ?`, [invoiceId], (err, results) => {
         if (err) {
             return res.status(500).json({ error: 'Database error' });
@@ -1024,25 +1040,12 @@ app.get('/api/invoices/:id/status', (req, res) => {
     });
 });
 
-// Get all invoices with status
-app.get('/api/invoices', (req, res) => {
-    db.query(`
-        SELECT i.*, c.company_name, c.gstin, s.shipment_type, s.shipment_subtype
-        FROM invoices i
-        LEFT JOIN shipments s ON i.shipment_id = s.id
-        LEFT JOIN customers c ON s.customer_id = c.id
-        ORDER BY i.created_at DESC
-    `, (err, invoices) => {
-        if (err) {
-            console.error('Error fetching invoices with status:', err);
-            return res.status(500).json({ error: 'Database error' });
-        }
-        res.json(invoices);
-    });
-});
-
 // Start server
 app.listen(PORT, () => {
     console.log(`Server running on http://localhost:${PORT}`);
-    console.log('Default login: admin@123.com / admin123');
+    console.log('Available users for login:');
+    console.log('- admin@123.com / admin (Admin User)');
+    console.log('- manager@accex.com / manager123 (Manager User)');
+    console.log('- user1@accex.com / user123 (User One)');
+    console.log('- user2@accex.com / user123 (User Two)');
 });

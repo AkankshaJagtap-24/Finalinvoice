@@ -250,24 +250,34 @@ async function handleLogin(e) {
     
     showLoading();
     
-    // Demo login without API
-    setTimeout(() => {
-        if (email === 'admin@123.com' && password === 'admin123') {
-            currentUser = {
-                id: 1,
-                email: email,
-                name: 'Administrator'
-            };
-            // Store user in localStorage for demo persistence
+    try {
+        const response = await fetch('/api/login', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            credentials: 'include',
+            body: JSON.stringify({ email, password })
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok && data.success) {
+            currentUser = data.user;
+            // Store user in localStorage for persistence
             localStorage.setItem('demoUser', JSON.stringify(currentUser));
             showToast('Login successful!', 'success');
             showDashboard();
             loadDashboardData();
         } else {
-            showToast('Invalid credentials. Use admin@123.com / admin123', 'error');
+            showToast(data.error || 'Login failed', 'error');
         }
+    } catch (error) {
+        console.error('Login error:', error);
+        showToast('Login failed. Please try again.', 'error');
+    } finally {
         hideLoading();
-    }, 1000);
+    }
 }
 
 async function handleSignup(e) {
@@ -332,11 +342,28 @@ function showLoginForm() {
 }
 
 async function handleLogout() {
-    // Demo logout - clear localStorage
-    localStorage.removeItem('demoUser');
-    currentUser = null;
-    showLoginPage();
-    showToast('Logged out successfully', 'info');
+    try {
+        const response = await fetch('/api/logout', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            credentials: 'include'
+        });
+        
+        // Clear localStorage regardless of API response
+        localStorage.removeItem('demoUser');
+        currentUser = null;
+        showLoginPage();
+        showToast('Logged out successfully', 'info');
+    } catch (error) {
+        console.error('Logout error:', error);
+        // Still clear localStorage and show login page even if API fails
+        localStorage.removeItem('demoUser');
+        currentUser = null;
+        showLoginPage();
+        showToast('Logged out successfully', 'info');
+    }
 }
 
 // Navigation functions
@@ -977,7 +1004,7 @@ function displayInvoices() {
     invoicesList.innerHTML = filteredInvoices.map(invoice => `
         <div class="invoice-card">
             <div class="invoice-header">
-                <div class="invoice-number">${invoice.invoice_no}</div>
+                <div class="invoice-number">Created by: ${invoice.created_by_name || 'Admin User'}</div>
                 <div class="invoice-status ${invoice.status}">${invoice.status}</div>
             </div>
             <div class="invoice-body">
@@ -988,7 +1015,12 @@ function displayInvoices() {
                     </div>
                     <div class="invoice-detail">
                         <label>Date</label>
-                        <span>${invoice.invoice_date}</span>
+                        <span>${invoice.invoice_date ? new Date(invoice.invoice_date).toLocaleDateString('en-IN', { 
+                            timeZone: 'Asia/Kolkata',
+                            day: '2-digit', 
+                            month: 'short', 
+                            year: 'numeric' 
+                        }) : '10-Nov-2023'}</span>
                     </div>
                     <div class="invoice-detail">
                         <label>FX Rate</label>
@@ -997,7 +1029,7 @@ function displayInvoices() {
                 </div>
                 <div class="invoice-amount">
                     <div class="amount-label">Total Amount</div>
-                    <div class="amount-value">$${parseFloat(invoice.total_amount_usd).toFixed(2)}</div>
+                    <div class="amount-value">$${parseFloat(invoice.total_usd || 0).toFixed(2)}</div>
                 </div>
                 <div class="invoice-actions">
                     <button class="btn btn-primary" onclick="showInvoiceModal(${invoice.id})">
@@ -1100,7 +1132,12 @@ function displayInvoiceModal(data) {
                     </div>
                     <div class="details-row">
                         <div class="details-label">Invoice Date:</div>
-                        <div class="details-value">${invoice.invoice_date || '10-Nov-2023'}</div>
+                        <div class="details-value">${invoice.invoice_date ? new Date(invoice.invoice_date).toLocaleDateString('en-IN', { 
+                            timeZone: 'Asia/Kolkata',
+                            day: '2-digit', 
+                            month: 'short', 
+                            year: 'numeric' 
+                        }) : '10-Nov-2023'}</div>
                     </div>
                     <div class="details-row">
                         <div class="details-label">PO Reference:</div>
@@ -1121,6 +1158,10 @@ function displayInvoiceModal(data) {
                     <div class="details-row">
                         <div class="details-label">SLB Reference #:</div>
                         <div class="details-value">S-202919/REW</div>
+                    </div>
+                    <div class="details-row">
+                        <div class="details-label">Created By:</div>
+                        <div class="details-value">${invoice.created_by_name || 'Admin User'}</div>
                     </div>
                 </div>
                 
@@ -1155,11 +1196,11 @@ function displayInvoiceModal(data) {
                                 <td>Warehousing & Logistics Services<br>SAC: 996729</td>
                                 <td>SER</td>
                                 <td>1.00</td>
-                                <td>${invoice.subtotal_usd || 0}</td>
+                                <td>${parseFloat(invoice.subtotal_usd || 0).toFixed(2)}</td>
                                 <td>USD</td>
-                                <td>${invoice.subtotal_usd || 0}</td>
+                                <td>${parseFloat(invoice.subtotal_usd || 0).toFixed(2)}</td>
                                 <td>${invoice.fx_rate || 81.90}</td>
-                                <td>${invoice.subtotal_usd || 0}</td>
+                                <td>${parseFloat(invoice.subtotal_usd || 0).toFixed(2)}</td>
                             </tr>
                             <tr class="sub-header">
                                 <td colspan="8">ASC- 221, BOE #: 2024815</td>
@@ -1256,7 +1297,7 @@ function displayInvoiceModal(data) {
                 <div class="summary-section">
                     <div class="total-bill">
                         <div class="total-label">Total Bill Value (USD):</div>
-                        <div class="total-value">$${invoice.total_usd || 0}</div>
+                        <div class="total-value">$${parseFloat(invoice.total_usd || 0).toFixed(2)}</div>
                     </div>
                     
                     <table class="summary-table">
@@ -1278,17 +1319,17 @@ function displayInvoiceModal(data) {
                                 <td>${invoice.fx_rate || 81.90}</td>
                                 <td>996729</td>
                                 <td>18.00%</td>
-                                <td>${invoice.subtotal_usd || 0}</td>
-                                <td>${invoice.subtotal_inr || 0}</td>
-                                <td>${invoice.igst_amount_usd || 0}</td>
-                                <td>${invoice.igst_amount_inr || 0}</td>
-                                <td>${invoice.total_usd || 0}</td>
-                                <td>${invoice.total_inr || 0}</td>
+                                <td>${parseFloat(invoice.subtotal_usd || 0).toFixed(2)}</td>
+                                <td>${parseFloat(invoice.subtotal_inr || 0).toFixed(2)}</td>
+                                <td>${parseFloat(invoice.igst_amount_usd || 0).toFixed(2)}</td>
+                                <td>${parseFloat(invoice.igst_amount_inr || 0).toFixed(2)}</td>
+                                <td>${parseFloat(invoice.total_usd || 0).toFixed(2)}</td>
+                                <td>${parseFloat(invoice.total_inr || 0).toFixed(2)}</td>
                             </tr>
                             <tr class="total-row">
                                 <td colspan="7">TOTAL</td>
-                                <td>${invoice.total_usd || 0}</td>
-                                <td>${invoice.total_inr || 0}</td>
+                                <td>${parseFloat(invoice.total_usd || 0).toFixed(2)}</td>
+                                <td>${parseFloat(invoice.total_inr || 0).toFixed(2)}</td>
                             </tr>
                         </tbody>
                     </table>
@@ -2168,7 +2209,7 @@ function updateDashboardStats(shipmentsData) {
     if (totalShipments) totalShipments.textContent = shipmentsData.length;
     if (totalInvoices) totalInvoices.textContent = invoices.length;
     
-    const totalRevenueUSD = invoices.reduce((sum, invoice) => sum + parseFloat(invoice.total_amount_usd || 0), 0);
+    const totalRevenueUSD = invoices.reduce((sum, invoice) => sum + parseFloat(invoice.total_usd || 0), 0);
     if (totalRevenue) totalRevenue.textContent = `$${totalRevenueUSD.toFixed(2)}`;
     
     const pendingCount = invoices.filter(invoice => invoice.status === 'draft').length;
