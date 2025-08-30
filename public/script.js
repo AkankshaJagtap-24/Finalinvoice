@@ -112,6 +112,18 @@ function setupEventListeners() {
         if (shipmentTypeSelect) {
             shipmentTypeSelect.addEventListener('change', handleShipmentTypeChange);
         }
+
+        // Cascading selects
+        const categorySelect = document.getElementById('shipment_category');
+        const subcategorySelect = document.getElementById('shipment_subcategory');
+        const detailSelect = document.getElementById('shipment_detail');
+
+        if (categorySelect) {
+            categorySelect.addEventListener('change', handleCategoryChange);
+        }
+        if (subcategorySelect) {
+            subcategorySelect.addEventListener('change', handleSubcategoryChange);
+        }
         
         // Clear validation on input
         const formInputs = shipmentForm.querySelectorAll('input, select');
@@ -431,10 +443,20 @@ function showLoginPage() {
 function handleShipmentTypeChange() {
     const type = document.getElementById('shipment_type').value;
     const subtypeSelect = document.getElementById('shipment_subtype');
+    const categorySelect = document.getElementById('shipment_category');
+    const subcategorySelect = document.getElementById('shipment_subcategory');
+    const detailSelect = document.getElementById('shipment_detail');
     
     // Clear and disable subtype
     subtypeSelect.innerHTML = '<option value="">Select Shipment Type First</option>';
     subtypeSelect.disabled = true;
+    // Reset cascading selects
+    categorySelect.innerHTML = '<option value="">Select Shipment Type First</option>';
+    subcategorySelect.innerHTML = '<option value="">Select Category First</option>';
+    detailSelect.innerHTML = '<option value="">Select Sub-category First</option>';
+    categorySelect.disabled = true;
+    subcategorySelect.disabled = true;
+    detailSelect.disabled = true;
     
     if (type) {
         subtypeSelect.disabled = false;
@@ -445,6 +467,9 @@ function handleShipmentTypeChange() {
                 <option value="FC to FTWZ BOE">FC to FTWZ BOE</option>
                 <option value="DTA to FTWZ">DTA to FTWZ</option>
             `;
+            // Enable category and populate
+            categorySelect.disabled = false;
+            populateCategories('Inbound');
         } else if (type === 'Outbound') {
             subtypeSelect.innerHTML = `
                 <option value="">Select Subtype</option>
@@ -452,8 +477,120 @@ function handleShipmentTypeChange() {
                 <option value="FTWZ to FC">FTWZ to FC</option>
                 <option value="Intra SEZ">Intra SEZ</option>
             `;
+            categorySelect.disabled = false;
+            populateCategories('Outbound');
         }
     }
+}
+
+// Data model for cascading selects (trimmed to essentials, extend as needed)
+const BILLING_STRUCTURE = {
+    Inbound: {
+        'Customs Clearance': {
+            'New': ['Fixed Asset (FA)', 'Machinery & Spares (M&S)', 'Chemicals (DG / Non-DG)'],
+            'Old & Used': ['TEU / FEU / LCL → Per Vehicle / BOE'],
+            'CE Certification': ['Old & Used → Per Document']
+        },
+        'Inbound Transportation (Non-HAZ; HAZ = +50%)': {
+            'FCL': ['TEU (20’) → Port→FTWZ & Empty Return', 'FEU (40’) → Port→FTWZ & Empty Return'],
+            'LCL SEA / AIR / DTA': ['Gate In Charges → Per Vehicle'],
+            'Loading / Unloading': ['Cargo ≤ 1 Ton / Max 20 Boxes', 'Cargo > 1 Ton / > 20 Boxes'],
+            'Transportation (Sea/Air Port → FTWZ)': ['Upto 5 MT', '20’ Trailer']
+        },
+        'Handling': {
+            'Charge basis (higher of)': ['USD Per CBM / Ton', 'USD Per Box / Pallet'],
+            'Additional MHE for ODC': ['Per Half Shift (3MT Forklift / 5MT Hydra)', 'Case-to-case approval if >3MT/5MT']
+        },
+        'Documentation': {
+            'BOE': ['INR Per BOE']
+        },
+        'Container Scanning': {
+            'Scanning': ['USD Per TEU', 'USD Per FEU']
+        }
+    },
+    Outbound: {
+        'Customs Clearance': {
+            'New FA / M&S / Chemicals (DG / Non-DG)': ['TEU (20’) → Per TEU / BOE', 'FEU (40’) → Per FEU / BOE', 'LCL (SEA / AIR / Road) → Per Vehicle / BOE'],
+            'Old & Used': ['0.050% of Customs Assessable Value (Min. INR) – TEU/FEU/LCL → Per Vehicle / BOE'],
+            'CE Certification': ['Old & Used → INR Per Document']
+        },
+        'Handling (Non-HAZ; HAZ = +50%)': {
+            'Charge basis (higher of)': ['USD Per CBM / Ton', 'USD Per Box / Pallet'],
+            'Additional MHE for ODC': ['Per Half Shift (3MT Forklift / 5MT Hydra)', 'Case-to-case approval if >3MT/5MT']
+        },
+        'Documentation': {
+            'BOE': ['INR Per BOE']
+        },
+        'Transportation (Non-HAZ; HAZ = +50%)': {
+            'Routes & Vehicle Capacities': ['Arshiya → JNPT / Panvel / Nerul / Barmer / Ahmedabad / Kakinada / Vizag / etc.'],
+            'LR Charges': ['Per LR'],
+            'Detention': ['Per day after 24 hrs']
+        },
+        'Storage (Non-HAZ; HAZ = +50%)': {
+            'Ambient Shelving': ['Per Pallet / Month'],
+            'Non-Racking': ['Per Sqft / Month'],
+            'Closed Area': ['Per Sqft / Month'],
+            'Open Area': ['Per Sqft / Month'],
+            'Variable space': ['Half‑month usage']
+        }
+    }
+};
+
+function populateCategories(type) {
+    const categorySelect = document.getElementById('shipment_category');
+    const subcategorySelect = document.getElementById('shipment_subcategory');
+    const detailSelect = document.getElementById('shipment_detail');
+    categorySelect.innerHTML = '<option value="">Select Category</option>';
+    subcategorySelect.innerHTML = '<option value="">Select Category First</option>';
+    detailSelect.innerHTML = '<option value="">Select Sub-category First</option>';
+    subcategorySelect.disabled = true;
+    detailSelect.disabled = true;
+    Object.keys(BILLING_STRUCTURE[type]).forEach(cat => {
+        const opt = document.createElement('option');
+        opt.value = cat;
+        opt.textContent = cat;
+        categorySelect.appendChild(opt);
+    });
+}
+
+function handleCategoryChange() {
+    const type = document.getElementById('shipment_type').value;
+    const category = document.getElementById('shipment_category').value;
+    const subcategorySelect = document.getElementById('shipment_subcategory');
+    const detailSelect = document.getElementById('shipment_detail');
+    subcategorySelect.innerHTML = '<option value="">Select Sub-category</option>';
+    detailSelect.innerHTML = '<option value="">Select Sub-category First</option>';
+    detailSelect.disabled = true;
+    if (!type || !category) {
+        subcategorySelect.disabled = true;
+        return;
+    }
+    subcategorySelect.disabled = false;
+    Object.keys(BILLING_STRUCTURE[type][category]).forEach(sub => {
+        const opt = document.createElement('option');
+        opt.value = sub;
+        opt.textContent = sub;
+        subcategorySelect.appendChild(opt);
+    });
+}
+
+function handleSubcategoryChange() {
+    const type = document.getElementById('shipment_type').value;
+    const category = document.getElementById('shipment_category').value;
+    const subcategory = document.getElementById('shipment_subcategory').value;
+    const detailSelect = document.getElementById('shipment_detail');
+    detailSelect.innerHTML = '<option value="">Select Detail</option>';
+    if (!type || !category || !subcategory) {
+        detailSelect.disabled = true;
+        return;
+    }
+    detailSelect.disabled = false;
+    BILLING_STRUCTURE[type][category][subcategory].forEach(it => {
+        const opt = document.createElement('option');
+        opt.value = it;
+        opt.textContent = it;
+        detailSelect.appendChild(opt);
+    });
 }
 
 async function loadCustomers() {
@@ -776,7 +913,15 @@ async function handleShipmentSubmit(e) {
     const formData = new FormData(shipmentForm);
     const shipmentData = {
         shipment_type: formData.get('shipment_type'),
-        shipment_subtype: formData.get('shipment_subtype'),
+        // Compose detailed subtype path for readability and future pricing
+        shipment_subtype: (function(){
+            const base = formData.get('shipment_subtype') || '';
+            const cat = formData.get('shipment_category') || '';
+            const sub = formData.get('shipment_subcategory') || '';
+            const det = formData.get('shipment_detail') || '';
+            const parts = [base, cat, sub, det].filter(Boolean);
+            return parts.join(' > ');
+        })(),
         asc_number: formData.get('asc_number'),
         sh_number: formData.get('sh_number'),
         ref_number: formData.get('ref_number'),
