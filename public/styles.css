@@ -144,8 +144,11 @@ body {
 }
 
 .company-logo .logo-image {
-    height: 40px;
+    height: 80px;
     width: auto;
+    object-fit: contain;
+    display: block;
+    margin: 0 auto;
 }
 
 .company-logo .logo-text {

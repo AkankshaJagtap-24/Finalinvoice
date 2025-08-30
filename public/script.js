@@ -112,10 +112,11 @@ function setupEventListeners() {
         if (shipmentTypeSelect) {
             shipmentTypeSelect.addEventListener('change', handleShipmentTypeChange);
         }
-
+        
         // Cascading selects
         const categorySelect = document.getElementById('shipment_category');
-        const subcategorySelect = document.getElementById('shipment_subcategory');
+        const subcategorySelect = document.getElementById('shipment_currency'); // This is the subcategory field
+        const currencySelect = document.getElementById('shipment_subcategory'); // This is the currency field
         const detailSelect = document.getElementById('shipment_detail');
 
         if (categorySelect) {
@@ -123,6 +124,27 @@ function setupEventListeners() {
         }
         if (subcategorySelect) {
             subcategorySelect.addEventListener('change', handleSubcategoryChange);
+        }
+        if (currencySelect) {
+            currencySelect.addEventListener('change', handleCurrencyChange);
+        }
+        
+        if (detailSelect) {
+            detailSelect.addEventListener('change', handleDetailChange);
+        }
+        
+        const unitsSelect = document.getElementById('shipment_units');
+        if (unitsSelect) {
+            unitsSelect.addEventListener('change', function() {
+                const type = document.getElementById('shipment_type').value;
+                const category = document.getElementById('shipment_category').value;
+                const subcategory = document.getElementById('shipment_currency').value;
+                const currency = document.getElementById('shipment_subcategory').value;
+                const detail = document.getElementById('shipment_detail').value;
+                const units = this.value;
+                
+                console.log('Final selection:', { type, category, subcategory, currency, detail, units });
+            });
         }
         
         // Clear validation on input
@@ -180,6 +202,33 @@ function setupEventListeners() {
                     .catch(error => {
                         console.error('Test search error:', error);
                     });
+            });
+        }
+        
+        // Test billing button
+        const testBillingBtn = document.getElementById('testBilling');
+        if (testBillingBtn) {
+            testBillingBtn.addEventListener('click', function() {
+                console.log('Test billing button clicked!');
+                testBillingStructure();
+                
+                // Check current selections
+                const type = document.getElementById('shipment_type').value;
+                const category = document.getElementById('shipment_category').value;
+                const subcategory = document.getElementById('shipment_currency').value;
+                const currency = document.getElementById('shipment_subcategory').value;
+                const detail = document.getElementById('shipment_detail').value;
+                
+                console.log('Current selections:', { type, category, subcategory, currency, detail });
+                
+                // Manually trigger category change if category is selected
+                const categorySelect = document.getElementById('shipment_category');
+                if (categorySelect && categorySelect.value) {
+                    console.log('Current category value:', categorySelect.value);
+                    handleCategoryChange();
+                } else {
+                    console.log('No category selected');
+                }
             });
         }
         
@@ -371,10 +420,10 @@ async function handleLogout() {
     } catch (error) {
         console.error('Logout error:', error);
         // Still clear localStorage and show login page even if API fails
-        localStorage.removeItem('demoUser');
-        currentUser = null;
-        showLoginPage();
-        showToast('Logged out successfully', 'info');
+    localStorage.removeItem('demoUser');
+    currentUser = null;
+    showLoginPage();
+    showToast('Logged out successfully', 'info');
     }
 }
 
@@ -444,7 +493,8 @@ function handleShipmentTypeChange() {
     const type = document.getElementById('shipment_type').value;
     const subtypeSelect = document.getElementById('shipment_subtype');
     const categorySelect = document.getElementById('shipment_category');
-    const subcategorySelect = document.getElementById('shipment_subcategory');
+    const subcategorySelect = document.getElementById('shipment_currency'); // This is now the subcategory field
+    const currencySelect = document.getElementById('shipment_subcategory'); // This is now the currency field
     const detailSelect = document.getElementById('shipment_detail');
     
     // Clear and disable subtype
@@ -453,98 +503,354 @@ function handleShipmentTypeChange() {
     // Reset cascading selects
     categorySelect.innerHTML = '<option value="">Select Shipment Type First</option>';
     subcategorySelect.innerHTML = '<option value="">Select Category First</option>';
-    detailSelect.innerHTML = '<option value="">Select Sub-category First</option>';
+    currencySelect.innerHTML = '<option value="">Select Sub-category First</option>';
+    detailSelect.innerHTML = '<option value="">Select Currency First</option>';
+    const unitsSelect = document.getElementById('shipment_units');
+    if (unitsSelect) {
+        unitsSelect.innerHTML = '<option value="">Select Detail First</option>';
+        unitsSelect.disabled = true;
+    }
     categorySelect.disabled = true;
     subcategorySelect.disabled = true;
+    currencySelect.disabled = true;
     detailSelect.disabled = true;
     
     if (type) {
         subtypeSelect.disabled = false;
         
-        if (type === 'Inbound') {
+        if (type === 'A) INBOUND') {
             subtypeSelect.innerHTML = `
                 <option value="">Select Subtype</option>
                 <option value="FC to FTWZ BOE">FC to FTWZ BOE</option>
                 <option value="DTA to FTWZ">DTA to FTWZ</option>
+                <option value="Port to FTWZ">Port to FTWZ</option>
             `;
             // Enable category and populate
             categorySelect.disabled = false;
-            populateCategories('Inbound');
-        } else if (type === 'Outbound') {
+            populateCategories('A) INBOUND');
+        } else if (type === 'G) OUTBOUND') {
             subtypeSelect.innerHTML = `
                 <option value="">Select Subtype</option>
                 <option value="FTWZ to DTA">FTWZ to DTA</option>
                 <option value="FTWZ to FC">FTWZ to FC</option>
                 <option value="Intra SEZ">Intra SEZ</option>
+                <option value="FTWZ to Port">FTWZ to Port</option>
             `;
             categorySelect.disabled = false;
-            populateCategories('Outbound');
+            populateCategories('G) OUTBOUND');
         }
     }
 }
 
-// Data model for cascading selects (trimmed to essentials, extend as needed)
+// Data model for cascading selects (3-level hierarchy: Currency → Container/Shipment Type → Unit of Measurement)
 const BILLING_STRUCTURE = {
-    Inbound: {
-        'Customs Clearance': {
-            'New': ['Fixed Asset (FA)', 'Machinery & Spares (M&S)', 'Chemicals (DG / Non-DG)'],
-            'Old & Used': ['TEU / FEU / LCL → Per Vehicle / BOE'],
-            'CE Certification': ['Old & Used → Per Document']
+    'A) INBOUND': {
+        'A) Customs Clearance': {
+            'New Fixed Asset (FA)': {
+                'INR': {
+                    'TEU (20\')': ['Per TEU', 'Per TEU / BOE'],
+                    'TEU (40\')': ['Per TEU', 'Per TEU / BOE'],
+                    'FEU (20\')': ['Per FEU', 'Per FEU / BOE'],
+                    'FEU (40\')': ['Per FEU', 'Per FEU / BOE'],
+                    'LCL-SEA/AIR/Road': ['Per Vehicle', 'Per Vehicle / BOE']
+                },
+                'USD': {
+                    'TEU (20\')': ['Per TEU', 'Per TEU / BOE'],
+                    'TEU (40\')': ['Per TEU', 'Per TEU / BOE'],
+                    'FEU (20\')': ['Per FEU', 'Per FEU / BOE'],
+                    'FEU (40\')': ['Per FEU', 'Per FEU / BOE'],
+                    'LCL-SEA/AIR/Road': ['Per Vehicle', 'Per Vehicle / BOE']
+                }
+            },
+            'Machinery & Spares (M&S)': {
+                'INR': {
+                    'TEU (20\')': ['Per TEU', 'Per TEU / BOE'],
+                    'TEU (40\')': ['Per TEU', 'Per TEU / BOE'],
+                    'FEU (20\')': ['Per FEU', 'Per FEU / BOE'],
+                    'FEU (40\')': ['Per FEU', 'Per FEU / BOE'],
+                    'LCL-SEA/AIR/Road': ['Per Vehicle', 'Per Vehicle / BOE']
+                },
+                'USD': {
+                    'TEU (20\')': ['Per TEU', 'Per TEU / BOE'],
+                    'TEU (40\')': ['Per TEU', 'Per TEU / BOE'],
+                    'FEU (20\')': ['Per FEU', 'Per FEU / BOE'],
+                    'FEU (40\')': ['Per FEU', 'Per FEU / BOE'],
+                    'LCL-SEA/AIR/Road': ['Per Vehicle', 'Per Vehicle / BOE']
+                }
+            },
+            'Chemicals (Dangerous Goods (DG) / Non DG)': {
+                'INR': {
+                    'TEU (20\')': ['Per TEU', 'Per TEU / BOE'],
+                    'TEU (40\')': ['Per TEU', 'Per TEU / BOE'],
+                    'FEU (20\')': ['Per FEU', 'Per FEU / BOE'],
+                    'FEU (40\')': ['Per FEU', 'Per FEU / BOE'],
+                    'LCL-SEA/AIR/Road': ['Per Vehicle', 'Per Vehicle / BOE']
+                },
+                'USD': {
+                    'TEU (20\')': ['Per TEU', 'Per TEU / BOE'],
+                    'TEU (40\')': ['Per TEU', 'Per TEU / BOE'],
+                    'FEU (20\')': ['Per FEU', 'Per FEU / BOE'],
+                    'FEU (40\')': ['Per FEU', 'Per FEU / BOE'],
+                    'LCL-SEA/AIR/Road': ['Per Vehicle', 'Per Vehicle / BOE']
+                }
+            },
+            'Old & Used': {
+                'INR': {
+                    'TEU (20\')': ['Per TEU', 'Per TEU / BOE'],
+                    'TEU (40\')': ['Per TEU', 'Per TEU / BOE'],
+                    'FEU (20\')': ['Per FEU', 'Per FEU / BOE'],
+                    'FEU (40\')': ['Per FEU', 'Per FEU / BOE'],
+                    'LCL-SEA/AIR/Road': ['Per Vehicle', 'Per Vehicle / BOE']
+                },
+                'USD': {
+                    'TEU (20\')': ['Per TEU', 'Per TEU / BOE'],
+                    'TEU (40\')': ['Per TEU', 'Per TEU / BOE'],
+                    'FEU (20\')': ['Per FEU', 'Per FEU / BOE'],
+                    'FEU (40\')': ['Per FEU', 'Per FEU / BOE'],
+                    'LCL-SEA/AIR/Road': ['Per Vehicle', 'Per Vehicle / BOE']
+                }
+            }
         },
-        'Inbound Transportation (Non-HAZ; HAZ = +50%)': {
-            'FCL': ['TEU (20’) → Port→FTWZ & Empty Return', 'FEU (40’) → Port→FTWZ & Empty Return'],
-            'LCL SEA / AIR / DTA': ['Gate In Charges → Per Vehicle'],
-            'Loading / Unloading': ['Cargo ≤ 1 Ton / Max 20 Boxes', 'Cargo > 1 Ton / > 20 Boxes'],
-            'Transportation (Sea/Air Port → FTWZ)': ['Upto 5 MT', '20’ Trailer']
+        'B) CE Certification': {
+            'Old & Used': {
+                'INR': ['Per Document'],
+                'USD': ['Per Document']
+            }
         },
-        'Handling': {
-            'Charge basis (higher of)': ['USD Per CBM / Ton', 'USD Per Box / Pallet'],
-            'Additional MHE for ODC': ['Per Half Shift (3MT Forklift / 5MT Hydra)', 'Case-to-case approval if >3MT/5MT']
+        'C) Inbound Transportation (Non-HAZ; for HAZ add 50%)': {
+            'FCL': {
+                'INR': {
+                    'TEU (20\')': ['Port to FTWZ & Empty Return → Per TEU'],
+                    'FEU (40\')': ['Port to FTWZ & Empty Return → Per FEU']
+                }
+            },
+            'LCL SEA / AIR / DTA': {
+                'INR': ['Gate In Charges → Per Vehicle']
+            },
+            'Loading / Unloading': {
+                'INR': ['Cargo ≤ 1 Ton / Max 20 Boxes', 'Cargo > 1 Ton / > 20 Boxes']
+            },
+            'Transportation (Sea / Air Port → FTWZ)': {
+                'INR': ['Upto 5 MT', '20\' Trailer']
+            }
         },
-        'Documentation': {
-            'BOE': ['INR Per BOE']
+        'D) Handling': {
+            'General Handling': {
+                'USD': ['Per CBM / Ton', 'Per Box / Pallet']
+            },
+            'Additional MHE for ODC': {
+                'INR': ['Per Half Shift (3MT Forklift / 5MT Hydra)', 'Case-to-case approval for > 3MT Forklift / 5MT Hydra']
+            }
         },
-        'Container Scanning': {
-            'Scanning': ['USD Per TEU', 'USD Per FEU']
+        'E) Documentation': {
+            'BOE': {
+                'INR': ['Per BOE'],
+                'USD': ['Per BOE']
+            }
+        },
+        'F) Container Scanning': {
+            'Scanning': {
+                'USD': ['Per TEU', 'Per FEU']
+            }
         }
     },
-    Outbound: {
-        'Customs Clearance': {
-            'New FA / M&S / Chemicals (DG / Non-DG)': ['TEU (20’) → Per TEU / BOE', 'FEU (40’) → Per FEU / BOE', 'LCL (SEA / AIR / Road) → Per Vehicle / BOE'],
-            'Old & Used': ['0.050% of Customs Assessable Value (Min. INR) – TEU/FEU/LCL → Per Vehicle / BOE'],
-            'CE Certification': ['Old & Used → INR Per Document']
+    'G) OUTBOUND': {
+        'G) Customs Clearance': {
+            'New Fixed Asset (FA)': {
+                'INR': {
+                    'TEU (20\')': ['Per TEU', 'Per TEU / BOE'],
+                    'TEU (40\')': ['Per TEU', 'Per TEU / BOE'],
+                    'FEU (20\')': ['Per FEU', 'Per FEU / BOE'],
+                    'FEU (40\')': ['Per FEU', 'Per FEU / BOE'],
+                    'LCL-SEA/AIR/Road': ['Per Vehicle', 'Per Vehicle / BOE']
+                },
+                'USD': {
+                    'TEU (20\')': ['Per TEU', 'Per TEU / BOE'],
+                    'TEU (40\')': ['Per TEU', 'Per TEU / BOE'],
+                    'FEU (20\')': ['Per FEU', 'Per FEU / BOE'],
+                    'FEU (40\')': ['Per FEU', 'Per FEU / BOE'],
+                    'LCL-SEA/AIR/Road': ['Per Vehicle', 'Per Vehicle / BOE']
+                }
+            },
+            'Machinery & Spares (M&S)': {
+                'INR': {
+                    'TEU (20\')': ['Per TEU', 'Per TEU / BOE'],
+                    'TEU (40\')': ['Per TEU', 'Per TEU / BOE'],
+                    'FEU (20\')': ['Per FEU', 'Per FEU / BOE'],
+                    'FEU (40\')': ['Per FEU', 'Per FEU / BOE'],
+                    'LCL-SEA/AIR/Road': ['Per Vehicle', 'Per Vehicle / BOE']
+                },
+                'USD': {
+                    'TEU (20\')': ['Per TEU', 'Per TEU / BOE'],
+                    'TEU (40\')': ['Per TEU', 'Per TEU / BOE'],
+                    'FEU (20\')': ['Per FEU', 'Per FEU / BOE'],
+                    'FEU (40\')': ['Per FEU', 'Per FEU / BOE'],
+                    'LCL-SEA/AIR/Road': ['Per Vehicle', 'Per Vehicle / BOE']
+                }
+            },
+            'Chemicals (Dangerous Goods (DG) / Non DG)': {
+                'INR': {
+                    'TEU (20\')': ['Per TEU', 'Per TEU / BOE'],
+                    'TEU (40\')': ['Per TEU', 'Per TEU / BOE'],
+                    'FEU (20\')': ['Per FEU', 'Per FEU / BOE'],
+                    'FEU (40\')': ['Per FEU', 'Per FEU / BOE'],
+                    'LCL-SEA/AIR/Road': ['Per Vehicle', 'Per Vehicle / BOE']
+                },
+                'USD': {
+                    'TEU (20\')': ['Per TEU', 'Per TEU / BOE'],
+                    'TEU (40\')': ['Per TEU', 'Per TEU / BOE'],
+                    'FEU (20\')': ['Per FEU', 'Per FEU / BOE'],
+                    'FEU (40\')': ['Per FEU', 'Per FEU / BOE'],
+                    'LCL-SEA/AIR/Road': ['Per Vehicle', 'Per Vehicle / BOE']
+                }
+            },
+            'Old & Used': {
+                'INR': {
+                    'TEU (20\')': ['Per TEU', 'Per TEU / BOE'],
+                    'TEU (40\')': ['Per TEU', 'Per TEU / BOE'],
+                    'FEU (20\')': ['Per FEU', 'Per FEU / BOE'],
+                    'FEU (40\')': ['Per FEU', 'Per FEU / BOE'],
+                    'LCL-SEA/AIR/Road': ['Per Vehicle', 'Per Vehicle / BOE']
+                },
+                'USD': {
+                    'TEU (20\')': ['Per TEU', 'Per TEU / BOE'],
+                    'TEU (40\')': ['Per TEU', 'Per TEU / BOE'],
+                    'FEU (20\')': ['Per FEU', 'Per FEU / BOE'],
+                    'FEU (40\')': ['Per FEU', 'Per FEU / BOE'],
+                    'LCL-SEA/AIR/Road': ['Per Vehicle', 'Per Vehicle / BOE']
+                }
+            }
         },
-        'Handling (Non-HAZ; HAZ = +50%)': {
-            'Charge basis (higher of)': ['USD Per CBM / Ton', 'USD Per Box / Pallet'],
-            'Additional MHE for ODC': ['Per Half Shift (3MT Forklift / 5MT Hydra)', 'Case-to-case approval if >3MT/5MT']
+        'H) CE Certification': {
+            'Old & Used': {
+                'INR': ['Per Document'],
+                'USD': ['Per Document']
+            }
         },
-        'Documentation': {
-            'BOE': ['INR Per BOE']
+        'I) Handling (Non-HAZ; for HAZ add 50%)': {
+            'General Handling': {
+                'USD': ['Per CBM / Ton', 'Per Box / Pallet']
+            },
+            'Additional MHE for ODC': {
+                'INR': ['Per Half Shift (3MT Forklift / 5MT Hydra)', 'Case-to-case approval for > 3MT Forklift / 5MT Hydra']
+            }
         },
-        'Transportation (Non-HAZ; HAZ = +50%)': {
-            'Routes & Vehicle Capacities': ['Arshiya → JNPT / Panvel / Nerul / Barmer / Ahmedabad / Kakinada / Vizag / etc.'],
-            'LR Charges': ['Per LR'],
-            'Detention': ['Per day after 24 hrs']
+        'J) Documentation': {
+            'BOE': {
+                'INR': ['Per BOE'],
+                'USD': ['Per BOE']
+            }
         },
-        'Storage (Non-HAZ; HAZ = +50%)': {
-            'Ambient Shelving': ['Per Pallet / Month'],
-            'Non-Racking': ['Per Sqft / Month'],
-            'Closed Area': ['Per Sqft / Month'],
-            'Open Area': ['Per Sqft / Month'],
-            'Variable space': ['Half‑month usage']
+        'K) Transportation (Non-HAZ; for HAZ add 50%)': {
+            'Pro-rata Basis (Fuel Base Rate ₹97.28/ltr as of June 2022)': {
+                'INR': ['Base Rate: ₹97.28/ltr']
+            },
+            'Routes & Capacities': {
+                'INR': ['Arshiya → JNPT/Nhava Sheva', 'Arshiya → Panvel', 'Arshiya → Nerul/Mhape', 'Arshiya → Barmer', 'Arshiya → Ahmedabad/Mehsana', 'Arshiya → Kakinada', 'Arshiya → Visakhapatnam SEZ']
+            },
+            'Additional Charges': {
+                'INR': ['LR Charges → Per LR', 'Detention → Per day after 24 hrs']
+            }
+        },
+        'L) Storage Charges (Non-HAZ; for HAZ add 50%)': {
+            'Storage (Ambient Shelving)': {
+                'INR': ['Per Pallet / Month']
+            },
+            'Storage (Non-racking)': {
+                'INR': ['Per Sqft / Month']
+            },
+            'Storage (Closed Area)': {
+                'INR': ['Per Sqft / Month']
+            },
+            'Storage (Open Area)': {
+                'INR': ['Per Sqft / Month']
+            },
+            'Notes': {
+                'INR': ['Variable space charged per half month; minimum chargeable applies']
+            }
         }
     }
 };
 
-function populateCategories(type) {
-    const categorySelect = document.getElementById('shipment_category');
-    const subcategorySelect = document.getElementById('shipment_subcategory');
+// Test function to verify BILLING_STRUCTURE is accessible
+function testBillingStructure() {
+    console.log('Testing BILLING_STRUCTURE...');
+    console.log('Available types:', Object.keys(BILLING_STRUCTURE));
+    console.log('INBOUND categories:', Object.keys(BILLING_STRUCTURE['A) INBOUND']));
+    console.log('Customs Clearance subcategories:', Object.keys(BILLING_STRUCTURE['A) INBOUND']['A) Customs Clearance']));
+    console.log('New Fixed Asset currencies:', Object.keys(BILLING_STRUCTURE['A) INBOUND']['A) Customs Clearance']['New Fixed Asset (FA)']));
+    console.log('INR details:', Object.keys(BILLING_STRUCTURE['A) INBOUND']['A) Customs Clearance']['New Fixed Asset (FA)']['INR']));
+    console.log('TEU (20\') units:', BILLING_STRUCTURE['A) INBOUND']['A) Customs Clearance']['New Fixed Asset (FA)']['INR']['TEU (20\')']);
+    
+    // Test manual dropdown population
+    console.log('Testing manual dropdown population...');
+    const subcategorySelect = document.getElementById('shipment_currency');
+    const currencySelect = document.getElementById('shipment_subcategory');
     const detailSelect = document.getElementById('shipment_detail');
+    
+    if (subcategorySelect) {
+        console.log('Subcategory select found, populating...');
+        subcategorySelect.innerHTML = '<option value="">Select Sub-category</option>';
+        const subcategories = Object.keys(BILLING_STRUCTURE['A) INBOUND']['A) Customs Clearance']);
+        subcategories.forEach(sub => {
+            const opt = document.createElement('option');
+            opt.value = sub;
+            opt.textContent = sub;
+            subcategorySelect.appendChild(opt);
+        });
+        console.log('Subcategories populated:', subcategories);
+        
+        // Also test detail dropdown population
+        if (currencySelect && detailSelect) {
+            console.log('Testing detail dropdown population...');
+            const testSubcategory = 'New Fixed Asset (FA)';
+            const testCurrency = 'INR';
+            const detailData = BILLING_STRUCTURE['A) INBOUND']['A) Customs Clearance'][testSubcategory][testCurrency];
+            console.log('Test detail data:', detailData);
+            
+            detailSelect.innerHTML = '<option value="">Select Detail</option>';
+            if (detailData && Array.isArray(detailData)) {
+                Object.keys(BILLING_STRUCTURE['A) INBOUND']['A) Customs Clearance'][testSubcategory][testCurrency]).forEach(detail => {
+                    const opt = document.createElement('option');
+                    opt.value = detail;
+                    opt.textContent = detail;
+                    detailSelect.appendChild(opt);
+                });
+                console.log('Test details populated');
+            }
+        }
+    } else {
+        console.log('Subcategory select NOT found!');
+    }
+}
+
+function populateCategories(type) {
+    console.log('populateCategories called with type:', type); // Debug log
+    const categorySelect = document.getElementById('shipment_category');
+    const subcategorySelect = document.getElementById('shipment_currency'); // This is now the subcategory field
+    const currencySelect = document.getElementById('shipment_subcategory'); // This is now the currency field
+    const detailSelect = document.getElementById('shipment_detail');
+    const unitsSelect = document.getElementById('shipment_units');
+    
+    console.log('Elements found:', { 
+        categorySelect: !!categorySelect, 
+        subcategorySelect: !!subcategorySelect, 
+        currencySelect: !!currencySelect, 
+        detailSelect: !!detailSelect,
+        unitsSelect: !!unitsSelect
+    }); // Debug log
+    
     categorySelect.innerHTML = '<option value="">Select Category</option>';
     subcategorySelect.innerHTML = '<option value="">Select Category First</option>';
-    detailSelect.innerHTML = '<option value="">Select Sub-category First</option>';
+    currencySelect.innerHTML = '<option value="">Select Sub-category First</option>';
+    detailSelect.innerHTML = '<option value="">Select Currency First</option>';
+    unitsSelect.innerHTML = '<option value="">Select Detail First</option>';
+    
     subcategorySelect.disabled = true;
+    currencySelect.disabled = true;
     detailSelect.disabled = true;
+    unitsSelect.disabled = true;
+    
     Object.keys(BILLING_STRUCTURE[type]).forEach(cat => {
         const opt = document.createElement('option');
         opt.value = cat;
@@ -554,43 +860,193 @@ function populateCategories(type) {
 }
 
 function handleCategoryChange() {
+    console.log('handleCategoryChange called!'); // Debug log
     const type = document.getElementById('shipment_type').value;
     const category = document.getElementById('shipment_category').value;
-    const subcategorySelect = document.getElementById('shipment_subcategory');
+    const subcategorySelect = document.getElementById('shipment_currency'); // This is now the subcategory field
+    const currencySelect = document.getElementById('shipment_subcategory'); // This is now the currency field
     const detailSelect = document.getElementById('shipment_detail');
+    
+    console.log('Values:', { type, category }); // Debug log
+    
+    // Clear all dependent dropdowns
     subcategorySelect.innerHTML = '<option value="">Select Sub-category</option>';
-    detailSelect.innerHTML = '<option value="">Select Sub-category First</option>';
-    detailSelect.disabled = true;
+    currencySelect.innerHTML = '<option value="">Select Sub-category First</option>';
+    detailSelect.innerHTML = '<option value="">Select Currency First</option>';
+    
     if (!type || !category) {
         subcategorySelect.disabled = true;
+        currencySelect.disabled = true;
+        detailSelect.disabled = true;
         return;
     }
+    
+    // Enable subcategory dropdown and populate it
     subcategorySelect.disabled = false;
-    Object.keys(BILLING_STRUCTURE[type][category]).forEach(sub => {
-        const opt = document.createElement('option');
-        opt.value = sub;
-        opt.textContent = sub;
-        subcategorySelect.appendChild(opt);
-    });
+    currencySelect.disabled = true;
+    detailSelect.disabled = true;
+    
+    // Get the category data from BILLING_STRUCTURE
+    const categoryData = BILLING_STRUCTURE[type][category];
+    console.log('Category data:', categoryData); // Debug log
+    
+    if (categoryData && typeof categoryData === 'object' && !Array.isArray(categoryData)) {
+        // This category has subcategory structure (like Customs Clearance)
+        Object.keys(categoryData).forEach(sub => {
+            const opt = document.createElement('option');
+            opt.value = sub;
+            opt.textContent = sub;
+            subcategorySelect.appendChild(opt);
+        });
+        console.log('Populated subcategories:', Object.keys(categoryData)); // Debug log
+    } else {
+        // This category has simple structure (like CE Certification)
+        subcategorySelect.disabled = true;
+        currencySelect.disabled = false;
+        if (Array.isArray(categoryData)) {
+            categoryData.forEach(currency => {
+                const opt = document.createElement('option');
+                opt.value = currency;
+                opt.textContent = currency;
+                currencySelect.appendChild(opt);
+            });
+        }
+    }
 }
 
 function handleSubcategoryChange() {
     const type = document.getElementById('shipment_type').value;
     const category = document.getElementById('shipment_category').value;
-    const subcategory = document.getElementById('shipment_subcategory').value;
+    const subcategory = document.getElementById('shipment_currency').value; // This is now the subcategory field
+    const currencySelect = document.getElementById('shipment_subcategory'); // This is now the currency field
     const detailSelect = document.getElementById('shipment_detail');
-    detailSelect.innerHTML = '<option value="">Select Detail</option>';
+    
+    // Clear dependent dropdowns
+    currencySelect.innerHTML = '<option value="">Select Currency</option>';
+    detailSelect.innerHTML = '<option value="">Select Currency First</option>';
+    
     if (!type || !category || !subcategory) {
+        currencySelect.disabled = true;
         detailSelect.disabled = true;
         return;
     }
+    
+    // Enable currency dropdown and populate it
+    currencySelect.disabled = false;
+    detailSelect.disabled = true;
+    
+    // Get the subcategory data from BILLING_STRUCTURE
+    const subcategoryData = BILLING_STRUCTURE[type][category][subcategory];
+    console.log('Subcategory data:', subcategoryData); // Debug log
+    
+    if (subcategoryData && typeof subcategoryData === 'object' && !Array.isArray(subcategoryData)) {
+        // This subcategory has currency structure (like New Fixed Asset (FA))
+        Object.keys(subcategoryData).forEach(currency => {
+            const opt = document.createElement('option');
+            opt.value = currency;
+            opt.textContent = currency;
+            currencySelect.appendChild(opt);
+        });
+        console.log('Populated currencies:', Object.keys(subcategoryData)); // Debug log
+    } else {
+        // This subcategory has direct options (like CE Certification)
+        currencySelect.disabled = true;
+        detailSelect.disabled = false;
+        if (Array.isArray(subcategoryData)) {
+            subcategoryData.forEach(it => {
+                const opt = document.createElement('option');
+                opt.value = it;
+                opt.textContent = it;
+                detailSelect.appendChild(opt);
+            });
+        }
+    }
+}
+
+function handleCurrencyChange() {
+    const type = document.getElementById('shipment_type').value;
+    const category = document.getElementById('shipment_category').value;
+    const subcategory = document.getElementById('shipment_currency').value; // This is now the subcategory field
+    const currency = document.getElementById('shipment_subcategory').value; // This is now the currency field
+    const detailSelect = document.getElementById('shipment_detail');
+    const unitsSelect = document.getElementById('shipment_units');
+    
+    // Clear dependent dropdowns
+    detailSelect.innerHTML = '<option value="">Select Detail</option>';
+    unitsSelect.innerHTML = '<option value="">Select Detail First</option>';
+    
+    if (!type || !category || !subcategory || !currency) {
+        detailSelect.disabled = true;
+        unitsSelect.disabled = true;
+        return;
+    }
+    
+    // Enable detail dropdown and populate it
     detailSelect.disabled = false;
-    BILLING_STRUCTURE[type][category][subcategory].forEach(it => {
-        const opt = document.createElement('option');
-        opt.value = it;
-        opt.textContent = it;
-        detailSelect.appendChild(opt);
+    unitsSelect.disabled = true;
+    
+    // Get the container types (TEU, FEU, LCL, etc.)
+    const containerTypes = Object.keys(BILLING_STRUCTURE[type][category][subcategory][currency] || {});
+    console.log('Container types found:', containerTypes);
+    
+    if (containerTypes.length > 0) {
+        containerTypes.forEach(containerType => {
+            const opt = document.createElement('option');
+            opt.value = containerType;
+            opt.textContent = containerType;
+            detailSelect.appendChild(opt);
+        });
+        console.log('Populated container types:', containerTypes);
+    } else {
+        console.log('No container types found for:', { type, category, subcategory, currency });
+    }
+}
+
+function handleDetailChange() {
+    const type = document.getElementById('shipment_type').value;
+    const category = document.getElementById('shipment_category').value;
+    const subcategory = document.getElementById('shipment_currency').value;
+    const currency = document.getElementById('shipment_subcategory').value;
+    const detail = document.getElementById('shipment_detail').value;
+    const unitsSelect = document.getElementById('shipment_units');
+    
+    if (!type || !category || !subcategory || !currency || !detail) {
+        unitsSelect.disabled = true;
+        return;
+    }
+    
+    // Enable units dropdown and populate it
+    unitsSelect.disabled = false;
+    unitsSelect.innerHTML = '<option value="">Select Units</option>';
+    
+    // Get the units for the selected detail
+    const units = BILLING_STRUCTURE[type][category][subcategory][currency][detail];
+    console.log('Units found for detail:', detail, ':', units);
+    
+    if (units && Array.isArray(units)) {
+        units.forEach(unit => {
+            const opt = document.createElement('option');
+            opt.value = unit;
+            opt.textContent = unit;
+            unitsSelect.appendChild(opt);
+        });
+        console.log('Populated units:', units);
+    } else {
+        console.log('No units found for detail:', detail);
+    }
+    
+    // Now we have the complete selection path
+    console.log('Complete selection:', {
+        type,
+        category,
+        subcategory,
+        currency,
+        detail
     });
+    
+    // Show the complete billing path
+    const billingPath = `${type} > ${category} > ${subcategory} > ${currency} > ${detail}`;
+    console.log('Billing Path:', billingPath);
 }
 
 async function loadCustomers() {
@@ -604,6 +1060,9 @@ async function loadCustomers() {
             
             // Test customer search immediately
             testCustomerSearch();
+    
+    // Test billing structure
+    testBillingStructure();
             
             // Test dropdown visibility
             testDropdownVisibility();
@@ -917,9 +1376,11 @@ async function handleShipmentSubmit(e) {
         shipment_subtype: (function(){
             const base = formData.get('shipment_subtype') || '';
             const cat = formData.get('shipment_category') || '';
-            const sub = formData.get('shipment_subcategory') || '';
+            const sub = formData.get('shipment_currency') || ''; // This is now the subcategory field
+            const cur = formData.get('shipment_subcategory') || ''; // This is now the currency field
             const det = formData.get('shipment_detail') || '';
-            const parts = [base, cat, sub, det].filter(Boolean);
+            const units = formData.get('shipment_units') || '';
+            const parts = [base, cat, sub, cur, det, units].filter(Boolean);
             return parts.join(' > ');
         })(),
         asc_number: formData.get('asc_number'),
@@ -943,6 +1404,30 @@ async function handleShipmentSubmit(e) {
     
     if (!shipmentData.shipment_subtype) {
         errors.push({ field: 'shipment_subtype', message: 'Shipment subtype is required' });
+    }
+    
+    // Validate subcategory field (now in shipment_currency)
+    const subcategory = formData.get('shipment_currency');
+    if (!subcategory || subcategory.trim() === '') {
+        errors.push({ field: 'shipment_currency', message: 'Sub-category is required' });
+    }
+    
+    // Validate currency field (now in shipment_subcategory)
+    const currency = formData.get('shipment_subcategory');
+    if (!currency || currency.trim() === '') {
+        errors.push({ field: 'shipment_subcategory', message: 'Currency is required' });
+    }
+    
+    // Validate detail field
+    const detail = formData.get('shipment_detail');
+    if (!detail || detail.trim() === '') {
+        errors.push({ field: 'shipment_detail', message: 'Detail is required' });
+    }
+    
+    // Validate units field
+    const units = formData.get('shipment_units');
+    if (!units || units.trim() === '') {
+        errors.push({ field: 'shipment_units', message: 'Units are required' });
     }
     
     if (!shipmentData.asc_number || shipmentData.asc_number.trim() === '') {
@@ -1177,8 +1662,8 @@ function displayInvoices() {
                     <div class="amount-value">$${parseFloat(invoice.total_usd || 0).toFixed(2)}</div>
                 </div>
                 <div class="invoice-actions">
-                    <button class="btn btn-primary" onclick="showInvoiceModal(${invoice.id})">
-                        <i class="fas fa-eye"></i> View
+                    <button class="btn btn-primary btn-view-invoice" onclick="openInvoiceView(${invoice.id})">
+                        <i class="fas fa-eye"></i> View Invoice
                     </button>
                     ${invoice.status === 'draft' ? `
                         <button class="btn btn-success" onclick="finalizeInvoice(${invoice.id})">
@@ -1213,6 +1698,12 @@ async function showInvoiceModal(invoiceId) {
     } finally {
         hideLoading();
     }
+}
+
+function openInvoiceView(invoiceId) {
+    // Open invoice view in a new tab/window
+    const invoiceViewUrl = `invoice-view.html?id=${invoiceId}`;
+    window.open(invoiceViewUrl, '_blank');
 }
 
 function displayInvoiceModal(data) {
@@ -1352,74 +1843,74 @@ function displayInvoiceModal(data) {
                             </tr>
                             <tr>
                                 <td>Agency Charges (Used Equipment)</td>
-                                <td>BOE</td>
-                                <td>1.00</td>
+                                    <td>BOE</td>
+                                    <td>1.00</td>
                                 <td>23.00</td>
-                                <td>INR</td>
+                                    <td>INR</td>
                                 <td>23.00</td>
-                                <td>81.90</td>
+                                    <td>81.90</td>
                                 <td>0.28</td>
-                            </tr>
-                            <tr>
-                                <td>Outbound Handling at FTWZ</td>
-                                <td>PKG</td>
-                                <td>2.00</td>
+                                </tr>
+                                <tr>
+                                    <td>Outbound Handling at FTWZ</td>
+                                    <td>PKG</td>
+                                    <td>2.00</td>
                                 <td>45.00</td>
-                                <td>USD</td>
+                                    <td>USD</td>
                                 <td>90.00</td>
-                                <td>1.00</td>
+                                    <td>1.00</td>
                                 <td>90.00</td>
-                            </tr>
-                            <tr>
+                                </tr>
+                                <tr>
                                 <td>Transportation Charges (FTWZ to Barmer)</td>
-                                <td>VEH</td>
-                                <td>1.00</td>
+                                    <td>VEH</td>
+                                    <td>1.00</td>
                                 <td>56.00</td>
-                                <td>INR</td>
+                                    <td>INR</td>
                                 <td>56.00</td>
-                                <td>81.90</td>
+                                    <td>81.90</td>
                                 <td>0.68</td>
-                            </tr>
-                            <tr>
-                                <td>LR Charges</td>
-                                <td>VEH</td>
-                                <td>1.00</td>
+                                </tr>
+                                <tr>
+                                    <td>LR Charges</td>
+                                    <td>VEH</td>
+                                    <td>1.00</td>
                                 <td>360.00</td>
-                                <td>INR</td>
+                                    <td>INR</td>
                                 <td>360.00</td>
-                                <td>81.90</td>
+                                    <td>81.90</td>
                                 <td>4.40</td>
-                            </tr>
-                            <tr>
-                                <td>CE Certificate</td>
-                                <td>BOE</td>
-                                <td>1.00</td>
+                                </tr>
+                                <tr>
+                                    <td>CE Certificate</td>
+                                    <td>BOE</td>
+                                    <td>1.00</td>
                                 <td>56.00</td>
-                                <td>INR</td>
+                                    <td>INR</td>
                                 <td>56.00</td>
-                                <td>81.90</td>
+                                    <td>81.90</td>
                                 <td>0.68</td>
-                            </tr>
-                            <tr>
+                                </tr>
+                                <tr>
                                 <td>Box Opening & Repacking (As Per Approval)</td>
-                                <td>BOX</td>
-                                <td>2.00</td>
+                                    <td>BOX</td>
+                                    <td>2.00</td>
                                 <td>48.00</td>
-                                <td>INR</td>
+                                    <td>INR</td>
                                 <td>96.00</td>
-                                <td>81.90</td>
+                                    <td>81.90</td>
                                 <td>1.17</td>
-                            </tr>
-                            <tr>
+                                </tr>
+                                <tr>
                                 <td>MHE Charges (*ODC)</td>
-                                <td>HST</td>
-                                <td>1.00</td>
+                                    <td>HST</td>
+                                    <td>1.00</td>
                                 <td>23.00</td>
-                                <td>INR</td>
+                                    <td>INR</td>
                                 <td>23.00</td>
-                                <td>81.90</td>
+                                    <td>81.90</td>
                                 <td>0.28</td>
-                            </tr>
+                                </tr>
                             <tr class="tax-row">
                                 <td colspan="6">IGST</td>
                                 <td>18.00%</td>
@@ -1522,16 +2013,16 @@ function displayInvoiceModal(data) {
                         </div>
                     </div>
                 </div>
-            </div>
-            
+                </div>
+                
             <!-- Action Buttons -->
-            <div class="modal-actions">
+        <div class="modal-actions">
                 <button class="btn btn-primary" onclick="downloadInvoicePDF(${invoice.id})">
                     <i class="fas fa-file-pdf"></i> Download PDF
                 </button>
-                <button class="btn btn-secondary" onclick="printInvoice()">
-                    <i class="fas fa-print"></i> Print Invoice
-                </button>
+            <button class="btn btn-secondary" onclick="printInvoice()">
+                <i class="fas fa-print"></i> Print Invoice
+            </button>
                 ${invoice.status === 'draft' ? `
                     <button class="btn btn-success" onclick="finalizeInvoice(${invoice.id})">
                         <i class="fas fa-check"></i> Finalize Invoice

@@ -6,7 +6,8 @@
     <title>Shipment Invoice Manager</title>
     
     <!-- Favicon -->
-    <link rel="icon" type="image/svg+xml" href="assets/images/logo.svg">
+    <link rel="icon" type="image/svg+xml" href="assets/images/logo
+    igin .svg">
     
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -26,16 +27,7 @@
         <div class="login-card">
             <div class="login-header">
                 <div class="company-logo">
-                    <div class="accex-logo">
-                        <div class="logo-symbol">
-                            <div class="logo-triangle"></div>
-                            <div class="logo-curve"></div>
-                        </div>
-                        <div class="logo-text">
-                            <div class="logo-main"><span class="logo-acc">ACC</span><span class="logo-ex">EX</span></div>
-                            <div class="logo-subtitle">Supply Chain Solutions</div>
-                        </div>
-                    </div>
+                    <img src="images/accex-logo.png" alt="ACCEX Supply Chain Solutions" class="logo-image" style="height: 120px; width: auto;">
                 </div>
                 <h2>Welcome to Shipment Invoice Manager</h2>
                 <p>Sign in to your account to continue</p>
@@ -94,16 +86,7 @@
         <aside class="sidebar">
             <div class="sidebar-header">
                 <div class="sidebar-logo">
-                    <div class="accex-logo">
-                        <div class="logo-symbol">
-                            <div class="logo-triangle"></div>
-                            <div class="logo-curve"></div>
-                        </div>
-                        <div class="logo-text">
-                            <div class="logo-main"><span class="logo-acc">ACC</span><span class="logo-ex">EX</span></div>
-                            <div class="logo-subtitle">Supply Chain Solutions</div>
-                        </div>
-                    </div>
+                    <img src="images/accex-logo.png" alt="ACCEX Supply Chain Solutions" class="logo-image" style="height: 60px; width: auto;">
                 </div>
                 <button class="sidebar-toggle">
                     <i class="fas fa-bars"></i>
@@ -181,8 +164,8 @@
                                         <label for="shipment_type" class="required">Shipment Type</label>
                                         <select id="shipment_type" name="shipment_type" required>
                                             <option value="">Select Shipment Type</option>
-                                            <option value="Inbound">Inbound</option>
-                                            <option value="Outbound">Outbound</option>
+                                            <option value="A) INBOUND">A) INBOUND</option>
+                                            <option value="G) OUTBOUND">G) OUTBOUND</option>
                                         </select>
                                     </div>
                                 </div>
@@ -210,9 +193,18 @@
 
                                 <div class="form-col">
                                     <div class="form-group">
-                                        <label for="shipment_subcategory" class="required">Sub-category</label>
-                                        <select id="shipment_subcategory" name="shipment_subcategory" disabled required>
+                                        <label for="shipment_currency" class="required">Sub-category</label>
+                                        <select id="shipment_currency" name="shipment_currency" disabled required>
                                             <option value="">Select Category First</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div class="form-col">
+                                    <div class="form-group">
+                                        <label for="shipment_subcategory" class="required">Currency</label>
+                                        <select id="shipment_subcategory" name="shipment_subcategory" disabled required>
+                                            <option value="">Select Sub-category First</option>
                                         </select>
                                     </div>
                                 </div>
@@ -221,7 +213,16 @@
                                     <div class="form-group">
                                         <label for="shipment_detail" class="required">Detail</label>
                                         <select id="shipment_detail" name="shipment_detail" disabled required>
-                                            <option value="">Select Sub-category First</option>
+                                            <option value="">Select Currency First</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                
+                                <div class="form-col">
+                                    <div class="form-group">
+                                        <label for="shipment_units" class="required">Units</label>
+                                        <select id="shipment_units" name="shipment_units" disabled required>
+                                            <option value="">Select Detail First</option>
                                         </select>
                                     </div>
                                 </div>
@@ -261,6 +262,7 @@
                                         <input type="hidden" id="customerSelect" name="customer_id" required>
                                         <button type="button" id="testDropdown" style="margin-top: 10px; padding: 5px 10px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer;">Test Dropdown</button>
                                         <button type="button" id="testSearch" style="margin-top: 10px; margin-left: 10px; padding: 5px 10px; background: #28a745; color: white; border: none; border-radius: 4px; cursor: pointer;">Test Search</button>
+                                        <button type="button" id="testBilling" style="margin-top: 10px; margin-left: 10px; padding: 5px 10px; background: #ffc107; color: black; border: none; border-radius: 4px; cursor: pointer;">Test Billing</button>
                                     </div>
                                 </div>
                                 

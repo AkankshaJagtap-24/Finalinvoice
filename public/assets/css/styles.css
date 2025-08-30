@@ -191,11 +191,51 @@ a:hover {
   justify-content: center;
   gap: var(--spacing-sm);
   margin-bottom: var(--spacing-lg);
+  min-height: 200px;
+  background: linear-gradient(135deg, rgba(30, 64, 175, 0.05), rgba(220, 38, 38, 0.05));
+  border: 2px dashed rgba(30, 64, 175, 0.3);
+  border-radius: 16px;
+  padding: 30px;
+  position: relative;
+}
+
+.company-logo::before {
+  content: "Logo Container";
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  font-size: 12px;
+  color: #1e40af;
+  font-weight: bold;
+  background: white;
+  padding: 4px 8px;
+  border-radius: 4px;
+  opacity: 0.7;
 }
 
 .company-logo .logo-image {
+  height: 150px;
+  width: auto;
+  object-fit: contain;
+  display: block;
+  margin: 0 auto;
+  border: 3px solid #1e40af;
+  border-radius: 12px;
+  padding: 15px;
+  background: white;
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
+  transition: all 0.3s ease;
+}
+
+.company-logo .logo-image:hover {
+  transform: scale(1.05);
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.2);
+}
+
+.sidebar-logo .logo-image {
   height: 40px;
   width: auto;
+  object-fit: contain;
 }
 
 /* ACCEX Logo Styles */
@@ -469,8 +509,9 @@ a:hover {
 }
 
 .sidebar-logo img {
-  height: 32px;
+  height: 50px;
   width: auto;
+  object-fit: contain;
 }
 
 .sidebar-toggle {
@@ -1785,4 +1826,31 @@ select:focus {
   .invoice-actions-print {
     display: none;
   }
+}
+
+/* View Invoice Button Styling */
+.btn-view-invoice {
+  background: #1e40af !important;
+  color: white !important;
+  font-weight: 600 !important;
+  padding: 0.75rem 1.5rem !important;
+  border-radius: 8px !important;
+  transition: all 0.3s ease !important;
+  box-shadow: 0 2px 4px rgba(30, 64, 175, 0.2) !important;
+  border: none !important;
+  cursor: pointer !important;
+  font-size: 0.9rem !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.5px !important;
+}
+
+.btn-view-invoice:hover {
+  background: #1d4ed8 !important;
+  transform: translateY(-2px) !important;
+  box-shadow: 0 4px 8px rgba(30, 64, 175, 0.3) !important;
+}
+
+.btn-view-invoice:active {
+  transform: translateY(0) !important;
+  box-shadow: 0 2px 4px rgba(30, 64, 175, 0.2) !important;
 }

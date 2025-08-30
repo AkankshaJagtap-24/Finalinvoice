@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Invoice View - ACCEX Shipment Manager</title>
+    <link rel="icon" type="image/svg+xml" href="assets/images/logo.svg">
+    <link rel="stylesheet" href="assets/css/styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        .invoice-view-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: white;
+        }
+        
+        .invoice-view-header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 2px solid #1e40af;
+        }
+        
+        .invoice-view-logo {
+            margin-bottom: 20px;
+        }
+        
+        .invoice-view-logo img {
+            height: 80px;
+            width: auto;
+        }
+        
+        .invoice-view-title {
+            font-size: 28px;
+            font-weight: bold;
+            color: #1e40af;
+            margin-bottom: 10px;
+        }
+        
+        .invoice-view-subtitle {
+            font-size: 16px;
+            color: #666;
+        }
+        
+        .back-button {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            background: #1e40af;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            z-index: 1000;
+            transition: all 0.3s ease;
+        }
+        
+        .back-button:hover {
+            background: #1d4ed8;
+            transform: translateY(-2px);
+        }
+        
+        .invoice-content {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+        
+        .loading-message {
+            text-align: center;
+            padding: 60px 20px;
+            font-size: 18px;
+            color: #666;
+        }
+        
+        .error-message {
+            text-align: center;
+            padding: 60px 20px;
+            color: #dc2626;
+            font-size: 18px;
+        }
+        
+        .print-button {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #10b981;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            z-index: 1000;
+            transition: all 0.3s ease;
+        }
+        
+        .print-button:hover {
+            background: #0ca678;
+            transform: translateY(-2px);
+        }
+        
+        @media print {
+            .back-button, .print-button {
+                display: none;
+            }
+            
+            .invoice-view-container {
+                padding: 0;
+                margin: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <button class="back-button" onclick="goBack()">
+        <i class="fas fa-arrow-left"></i> Back to Dashboard
+    </button>
+    
+    <button class="print-button" onclick="printInvoice()">
+        <i class="fas fa-print"></i> Print Invoice
+    </button>
+    
+    <div class="invoice-view-container">
+        <div class="invoice-view-header">
+            <div class="invoice-view-logo">
+                <img src="images/accex-logo.png" alt="ACCEX Supply Chain Solutions" style="height: 100px; width: auto;">
+            </div>
+            <div class="invoice-view-title">Invoice Details</div>
+            <div class="invoice-view-subtitle">View and manage your shipment invoices</div>
+        </div>
+        
+        <div class="invoice-content">
+            <div id="loadingMessage" class="loading-message">
+                <i class="fas fa-spinner fa-spin"></i> Loading invoice details...
+            </div>
+            
+            <div id="errorMessage" class="error-message" style="display: none;">
+                <i class="fas fa-exclamation-triangle"></i> Failed to load invoice details
+            </div>
+            
+            <div id="invoiceContent" style="display: none;">
+                <!-- Invoice content will be loaded here -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Get invoice ID from URL parameters
+        const urlParams = new URLSearchParams(window.location.search);
+        const invoiceId = urlParams.get('id');
+        
+        if (!invoiceId) {
+            showError('No invoice ID provided');
+        } else {
+            loadInvoice(invoiceId);
+        }
+        
+        async function loadInvoice(invoiceId) {
+            try {
+                const response = await fetch(`/api/invoices/${invoiceId}`);
+                if (response.ok) {
+                    const data = await response.json();
+                    displayInvoice(data);
+                } else {
+                    showError('Failed to load invoice details');
+                }
+            } catch (error) {
+                console.error('Error loading invoice:', error);
+                showError('Failed to load invoice details');
+            }
+        }
+        
+        function displayInvoice(data) {
+            const { invoice, items } = data;
+            
+            document.getElementById('loadingMessage').style.display = 'none';
+            document.getElementById('invoiceContent').style.display = 'block';
+            
+            const invoiceContent = document.getElementById('invoiceContent');
+            invoiceContent.innerHTML = `
+                <div class="invoice-container">
+                    <div class="invoice-print">
+                        <!-- Company Header with Logo -->
+                        <div class="invoice-header-print">
+                            <div class="header-left">
+                                                                 <img src="images/accex-logo.png" alt="ACCEX Supply Chain Solutions" style="height: 80px; width: auto;">
+                                <div class="company-info">
+                                    <div class="company-name">ACCEX Supply Chain Solutions</div>
+                                    <div class="company-subtitle">Your Trusted Logistics Partner</div>
+                                    <div class="company-address">123 Logistics Park, Mumbai, Maharashtra 400001</div>
+                                    <div class="company-website">www.accexlogistics.com</div>
+                                    <div class="company-details-table">
+                                        <div class="details-row">
+                                            <span class="details-label">GSTIN:</span>
+                                            <span class="details-value">27AABCA1234Z1Z5</span>
+                                        </div>
+                                        <div class="details-row">
+                                            <span class="details-label">PAN:</span>
+                                            <span class="details-value">AABCA1234Z</span>
+                                        </div>
+                                        <div class="details-row">
+                                            <span class="details-label">Phone:</span>
+                                            <span class="details-value">+91 22 1234 5678</span>
+                                        </div>
+                                        <div class="details-row">
+                                            <span class="details-label">Email:</span>
+                                            <span class="details-value">info@accexlogistics.com</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="header-right">
+                                <div class="invoice-title">INVOICE</div>
+                                <div class="invoice-details-table">
+                                    <div class="details-row">
+                                        <span class="details-label">Invoice No:</span>
+                                        <span class="details-value">INV-${invoice.id.toString().padStart(6, '0')}</span>
+                                    </div>
+                                    <div class="details-row">
+                                        <span class="details-label">Date:</span>
+                                        <span class="details-value">${invoice.invoice_date ? new Date(invoice.invoice_date).toLocaleDateString('en-IN', { 
+                                            timeZone: 'Asia/Kolkata',
+                                            day: '2-digit', 
+                                            month: 'short', 
+                                            year: 'numeric' 
+                                        }) : '10-Nov-2023'}</span>
+                                    </div>
+                                    <div class="details-row">
+                                        <span class="details-label">Status:</span>
+                                        <span class="details-value">${invoice.status.toUpperCase()}</span>
+                                    </div>
+                                    <div class="details-row">
+                                        <span class="details-label">Created By:</span>
+                                        <span class="details-value">${invoice.created_by_name || 'Admin User'}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Customer Details -->
+                        <div class="customer-details-section">
+                            <div class="section-title">Bill To:</div>
+                            <div class="customer-info">
+                                <div class="customer-name">${invoice.company_name || 'Customer Company'}</div>
+                                <div class="customer-address">${invoice.address || 'Customer Address'}</div>
+                                <div class="customer-gstin">GSTIN: ${invoice.gstin || 'N/A'}</div>
+                                <div class="customer-ref">Reference: ${invoice.reference || 'N/A'}</div>
+                            </div>
+                        </div>
+
+                        <!-- Service Details -->
+                        <div class="service-details-section">
+                            <div class="section-title">Service Details:</div>
+                            <div class="packing-details">
+                                <div class="packing-title">Shipment Information:</div>
+                                <div class="packing-item">Type: ${invoice.shipment_type || 'N/A'}</div>
+                                <div class="packing-item">Category: ${invoice.shipment_category || 'N/A'}</div>
+                                <div class="packing-item">Subcategory: ${invoice.shipment_subcategory || 'N/A'}</div>
+                                <div class="packing-item">Details: ${invoice.shipment_detail || 'N/A'}</div>
+                            </div>
+                        </div>
+
+                        <!-- Invoice Table -->
+                        <table class="invoice-table">
+                            <thead>
+                                <tr>
+                                    <th>Description</th>
+                                    <th>Quantity</th>
+                                    <th>Rate (USD)</th>
+                                    <th>Amount (USD)</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${items.map(item => `
+                                    <tr>
+                                        <td>${item.description}</td>
+                                        <td>${item.quantity}</td>
+                                        <td>$${parseFloat(item.rate || 0).toFixed(2)}</td>
+                                        <td>$${parseFloat(item.amount || 0).toFixed(2)}</td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+
+                        <!-- Summary Section -->
+                        <div class="summary-section">
+                            <div class="total-bill">
+                                <span class="total-label">Total Amount (USD):</span>
+                                <span class="total-value">$${parseFloat(invoice.total_usd || 0).toFixed(2)}</span>
+                            </div>
+                            <div class="total-bill">
+                                <span class="total-label">FX Rate:</span>
+                                <span class="total-value">${invoice.fx_rate || 'N/A'}</span>
+                            </div>
+                            <div class="total-bill">
+                                <span class="total-label">Total Amount (INR):</span>
+                                <span class="total-value">₹${parseFloat(invoice.total_inr || 0).toFixed(2)}</span>
+                            </div>
+                        </div>
+
+                        <!-- Footer Section -->
+                        <div class="footer-section">
+                            <div class="declaration">
+                                <strong>Declaration:</strong> We declare that this invoice shows the actual price of the goods described and that all particulars are true and correct.
+                            </div>
+                            
+                            <div class="bank-details">
+                                <div class="bank-title">Bank Details:</div>
+                                <div class="bank-subtitle">ACCEX Supply Chain Solutions</div>
+                                <div class="bank-info">
+                                    <div class="bank-row">
+                                        <span class="bank-label">Bank:</span>
+                                        <span class="bank-value">State Bank of India</span>
+                                    </div>
+                                    <div class="bank-row">
+                                        <span class="bank-label">Account:</span>
+                                        <span class="bank-value">1234567890</span>
+                                    </div>
+                                    <div class="bank-row">
+                                        <span class="bank-label">IFSC:</span>
+                                        <span class="bank-value">SBIN0001234</span>
+                                    </div>
+                                    <div class="bank-row">
+                                        <span class="bank-label">Branch:</span>
+                                        <span class="bank-value">Mumbai Main Branch</span>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="signatory">
+                                <div class="signature-title">For ACCEX Supply Chain Solutions</div>
+                                <div class="signature-name">Authorized Signatory</div>
+                            </div>
+                            
+                            <div class="company-footer">
+                                <div class="registered-office">
+                                    <strong>Registered Office:</strong> 123 Logistics Park, Mumbai, Maharashtra 400001
+                                </div>
+                                <div class="startup-recognition">
+                                    Recognized as a Startup by Department for Promotion of Industry and Internal Trade (DPIIT)
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+        
+        function showError(message) {
+            document.getElementById('loadingMessage').style.display = 'none';
+            document.getElementById('errorMessage').style.display = 'block';
+            document.getElementById('errorMessage').innerHTML = `
+                <i class="fas fa-exclamation-triangle"></i> ${message}
+            `;
+        }
+        
+        function goBack() {
+            window.close();
+            // If window.close() doesn't work (due to browser security), redirect to dashboard
+            if (!window.closed) {
+                window.location.href = 'index.html';
+            }
+        }
+        
+        function printInvoice() {
+            window.print();
+        }
+    </script>
+</body>
+</html>
