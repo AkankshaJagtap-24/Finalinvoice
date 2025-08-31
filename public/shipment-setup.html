@@ -1,0 +1,781 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shipment Setup - ACCEX Supply Chain Solutions</title>
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Stylesheets -->
+    <link rel="stylesheet" href="assets/css/modern-normalize.min.css">
+    <link rel="stylesheet" href="assets/css/styles.css">
+    
+    <style>
+        .shipment-setup-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .setup-header {
+            text-align: center;
+            margin-bottom: 40px;
+            padding: 30px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+        
+        .setup-header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            font-weight: 600;
+        }
+        
+        .setup-header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+        
+        .setup-form {
+            background: white;
+            border-radius: 15px;
+            padding: 40px;
+            box-shadow: 0 5px 25px rgba(0,0,0,0.08);
+        }
+        
+        .form-section {
+            margin-bottom: 40px;
+            padding: 30px;
+            border: 1px solid #e1e5e9;
+            border-radius: 12px;
+            background: #fafbfc;
+        }
+        
+        .section-title {
+            font-size: 1.4rem;
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #3498db;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .section-title i {
+            color: #3498db;
+        }
+        
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 25px;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: #34495e;
+            font-size: 0.95rem;
+        }
+        
+        .form-group select,
+        .form-group input,
+        .form-group textarea {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e1e5e9;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            background: white;
+        }
+        
+        .form-group select:focus,
+        .form-group input:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #3498db;
+            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+        }
+        
+        .form-group select {
+            cursor: pointer;
+        }
+        
+        .form-group select:disabled {
+            background: #f8f9fa;
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+        
+        .conditional-field {
+            display: none;
+        }
+        
+        .conditional-field.show {
+            display: block;
+        }
+        
+        .submit-section {
+            text-align: center;
+            margin-top: 40px;
+            padding: 30px;
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            border-radius: 12px;
+        }
+        
+        .btn-submit {
+            background: white;
+            color: #e74c3c;
+            border: none;
+            padding: 15px 40px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        
+        .btn-submit:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+        }
+        
+        .info-box {
+            background: #e8f4fd;
+            border: 1px solid #bee5eb;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+            color: #0c5460;
+        }
+        
+        .info-box i {
+            color: #17a2b8;
+            margin-right: 8px;
+        }
+        
+        .cascading-selects {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            border: 1px solid #dee2e6;
+        }
+        
+        .cascading-selects .form-group {
+            margin-bottom: 15px;
+        }
+        
+        .cascading-selects .form-group:last-child {
+            margin-bottom: 0;
+        }
+        
+        .required-field::after {
+            content: " *";
+            color: #e74c3c;
+            font-weight: bold;
+        }
+        
+        .rate-info {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 15px;
+            color: #856404;
+        }
+        
+        .rate-info i {
+            color: #f39c12;
+            margin-right: 8px;
+        }
+        
+        @media (max-width: 768px) {
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .setup-form {
+                padding: 20px;
+            }
+            
+            .setup-header h1 {
+                font-size: 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="shipment-setup-container">
+        <div class="setup-header">
+            <h1><i class="fas fa-ship"></i> Shipment Setup</h1>
+            <p>Configure your shipment with SLB billing structure hierarchy</p>
+        </div>
+        
+        <form class="setup-form" id="shipmentSetupForm">
+            <!-- Customer & BOE Section -->
+            <div class="form-section">
+                <h3 class="section-title">
+                    <i class="fas fa-user"></i>
+                    1. Customer & BOE Information
+                </h3>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="customerSearch" class="required">Search Customer</label>
+                        <input type="text" id="customerSearch" placeholder="Type company name or GSTIN..." autocomplete="off">
+                        <div id="customerSearchResults" class="dropdown-results hidden"></div>
+                        <input type="hidden" id="customerId" name="customer_id" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="boeNumber" class="required">BOE Number</label>
+                        <input type="text" id="boeNumber" name="boe_number" placeholder="Enter BOE number" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="customerName">Customer Name</label>
+                        <input type="text" id="customerName" name="customer_name" readonly>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="customerGstin">Customer GSTIN</label>
+                        <input type="text" id="customerGstin" name="customer_gstin" readonly>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Warehouse / Location Section -->
+            <div class="form-section">
+                <h3 class="section-title">
+                    <i class="fas fa-warehouse"></i>
+                    2. Warehouse / Location
+                </h3>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="warehouse" class="required">Select Warehouse</label>
+                        <select id="warehouse" name="warehouse" required>
+                            <option value="">Choose Warehouse</option>
+                            <option value="chennai_ftwz">Chennai FTWZ</option>
+                            <option value="mumbai_ftwz">Mumbai FTWZ</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- SLB Billing Structure Section -->
+            <div class="form-section">
+                <h3 class="section-title">
+                    <i class="fas fa-sitemap"></i>
+                    3. SLB Billing Structure sss
+                </h3>
+                <div class="info-box">
+                    <i class="fas fa-info-circle"></i>
+                    Follow the hierarchical structure: Direction → Service → Cargo Type → Currency → Equipment → Rate Basis
+                </div>
+                
+                <div class="cascading-selects">
+                    <!-- Level 1: Direction (INBOUND/OUTBOUND) -->
+                    <div class="form-group">
+                        <label for="direction" class="required">Direction</label>
+                        <select id="direction" name="direction" required>
+                            <option value="">Select Direction</option>
+                            <option value="INBOUND">INBOUND</option>
+                            <option value="OUTBOUND">OUTBOUND</option>
+                        </select>
+                    </div>
+                    
+                    <!-- Level 2: Service Type -->
+                    <div class="form-group">
+                        <label for="serviceType" class="required">Service Type</label>
+                        <select id="serviceType" name="serviceType" required disabled>
+                            <option value="">Select Direction First</option>
+                        </select>
+                    </div>
+                    
+                    <!-- Level 3: Cargo Type -->
+                    <div class="form-group">
+                        <label for="cargoType" class="required">Cargo Type</label>
+                        <select id="cargoType" name="cargoType" required disabled>
+                            <option value="">Select Service Type First</option>
+                        </select>
+                    </div>
+                    
+                    <!-- Level 4: Currency -->
+                    <div class="form-group">
+                        <label for="currency" class="required">Currency</label>
+                        <select id="currency" name="currency" required disabled>
+                            <option value="">Select Cargo Type First</option>
+                        </select>
+                    </div>
+                    
+                    <!-- Level 5: Equipment/Type -->
+                    <div class="form-group">
+                        <label for="equipment" class="required">Equipment/Type</label>
+                        <select id="equipment" name="equipment" required disabled>
+                            <option value="">Select Currency First</option>
+                        </select>
+                    </div>
+                    
+                    <!-- Level 6: Rate Basis -->
+                    <div class="form-group">
+                        <label for="rateBasis" class="required">Rate Basis</label>
+                        <select id="rateBasis" name="rateBasis" required disabled>
+                            <option value="">Select Equipment First</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <!-- Rate Information Display -->
+                <div id="rateInfo" class="rate-info hidden">
+                    <i class="fas fa-info-circle"></i>
+                    <span id="rateInfoText"></span>
+                </div>
+            </div>
+            
+            <!-- Additional Details Section -->
+            <div class="form-section">
+                <h3 class="section-title">
+                    <i class="fas fa-clipboard-list"></i>
+                    4. Additional Details
+                </h3>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="quantity">Quantity</label>
+                        <input type="number" id="quantity" name="quantity" placeholder="Enter quantity" min="1">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="weight">Weight (kg)</label>
+                        <input type="number" id="weight" name="weight" placeholder="Enter weight in kg" min="0" step="0.01">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="dimensions">Dimensions (L x W x H cm)</label>
+                        <input type="text" id="dimensions" name="dimensions" placeholder="e.g., 100 x 50 x 75">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="specialInstructions">Special Instructions</label>
+                        <textarea id="specialInstructions" name="specialInstructions" rows="3" placeholder="Any special handling requirements or instructions"></textarea>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Submit Section -->
+            <div class="submit-section">
+                <button type="submit" class="btn-submit">
+                    <i class="fas fa-paper-plane"></i>
+                    Create Shipment
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const form = document.getElementById('shipmentSetupForm');
+            const direction = document.getElementById('direction');
+            const serviceType = document.getElementById('serviceType');
+            const cargoType = document.getElementById('cargoType');
+            const currency = document.getElementById('currency');
+            const equipment = document.getElementById('equipment');
+            const rateBasis = document.getElementById('rateBasis');
+            const rateInfo = document.getElementById('rateInfo');
+            const rateInfoText = document.getElementById('rateInfoText');
+            
+            // Customer search functionality
+            const customerSearch = document.getElementById('customerSearch');
+            const customerSearchResults = document.getElementById('customerSearchResults');
+            const customerId = document.getElementById('customerId');
+            const customerName = document.getElementById('customerName');
+            const customerGstin = document.getElementById('customerGstin');
+            
+            // SLB Billing Structure Data based on the document
+            const slbStructure = {
+                INBOUND: {
+                    "Customs Clearance": {
+                        "New Fixed Asset (FA)": {
+                            "INR": {
+                                "TEU (20')": "Per TEU / BOE",
+                                "FEU (40')": "Per FEU / BOE",
+                                "LCL-SEA": "Per Vehicle / BOE",
+                                "LCL-AIR": "Per Vehicle / BOE",
+                                "Road": "Per Vehicle / BOE"
+                            }
+                        },
+                        "Machinery & Spares (M&S)": {
+                            "INR": {
+                                "TEU (20')": "Per TEU / BOE",
+                                "FEU (40')": "Per FEU / BOE",
+                                "LCL-SEA": "Per Vehicle / BOE",
+                                "LCL-AIR": "Per Vehicle / BOE",
+                                "Road": "Per Vehicle / BOE"
+                            }
+                        },
+                        "Chemicals (Dangerous Goods (DG))": {
+                            "INR": {
+                                "TEU (20')": "Per TEU / BOE",
+                                "FEU (40')": "Per FEU / BOE",
+                                "LCL-SEA": "Per Vehicle / BOE",
+                                "LCL-AIR": "Per Vehicle / BOE",
+                                "Road": "Per Vehicle / BOE"
+                            }
+                        },
+                        "Chemicals (Non DG)": {
+                            "INR": {
+                                "TEU (20')": "Per TEU / BOE",
+                                "FEU (40')": "Per FEU / BOE",
+                                "LCL-SEA": "Per Vehicle / BOE",
+                                "LCL-AIR": "Per Vehicle / BOE",
+                                "Road": "Per Vehicle / BOE"
+                            }
+                        },
+                        "Old & Used": {
+                            "INR": {
+                                "TEU": "Per Vehicle / BOE",
+                                "FEU": "Per Vehicle / BOE",
+                                "LCL": "Per Vehicle / BOE"
+                            }
+                        }
+                    },
+                    "CE Certification": {
+                        "Old & Used": {
+                            "INR": {
+                                "Per Document": "Per Document"
+                            }
+                        }
+                    },
+                                         "Inbound Transportation": {
+                         "FCL": {
+                             "INR": {
+                                 "TEU (20')": "Port to FTWZ and Empty Return - Per TEU",
+                                 "FEU (40')": "Port to FTWZ and Empty Return - Per FEU"
+                             }
+                         },
+                         "Gate In Charges": {
+                             "INR": {
+                                 "Per Vehicle": "Per Vehicle"
+                             }
+                         },
+                         "Loading / Unloading": {
+                             "INR": {
+                                 "Cargo upto 1 Ton / max 20 boxes": "Per Vehicle",
+                                 "Cargo > 1 Ton / > 20 boxes": "Per Vehicle"
+                             }
+                         },
+                         "Transportation": {
+                             "INR": {
+                                 "Upto 5 MT": "Per Vehicle",
+                                 "20' Trailer": "Per Vehicle"
+                             }
+                         }
+                     },
+                    "Handling": {
+                        "Higher of": {
+                            "USD": {
+                                "Per CBM / Ton": "Per CBM / Ton",
+                                "Per Box / Pallet": "Per Box / Pallet"
+                            }
+                        },
+                        "Additional MHE for ODC": {
+                            "INR": {
+                                "Per Half Shift for 3MT Forklift / 5MT Hydra": "Per Half Shift",
+                                "Case to Case approval for MHE requirement > 3MT Forklift / 5MT Hydra": "Case to Case"
+                            }
+                        }
+                    },
+                    "Documentation": {
+                        "Per BOE": {
+                            "INR": {
+                                "Per BOE": "Per BOE"
+                            }
+                        }
+                    },
+                    "Container Scanning": {
+                        "Per Container": {
+                            "USD": {
+                                "Per TEU": "Per TEU",
+                                "Per FEU": "Per FEU"
+                            }
+                        }
+                    }
+                },
+                OUTBOUND: {
+                    "Outbound Transportation": {
+                        "FCL": {
+                            "INR": {
+                                "TEU (20')": "FTWZ to Port and Empty Return - Per TEU",
+                                "FEU (40')": "FTWZ to Port and Empty Return - Per FEU"
+                            }
+                        },
+                        "LCL": {
+                            "INR": {
+                                "Per Vehicle": "Per Vehicle"
+                            }
+                        }
+                    },
+                    "Outbound Customs": {
+                        "Per BOE": {
+                            "INR": {
+                                "Per BOE": "Per BOE"
+                            }
+                        }
+                    }
+                }
+            };
+            
+            // Customer search functionality
+            customerSearch.addEventListener('input', function() {
+                const query = this.value.trim();
+                if (query.length < 2) {
+                    customerSearchResults.classList.add('hidden');
+                    return;
+                }
+                
+                // Simulate customer search (replace with actual API call)
+                const mockCustomers = [
+                    { id: 1, name: "ABC Company Ltd", gstin: "27AABC1234567890" },
+                    { id: 2, name: "XYZ Corporation", gstin: "12BXYZ0987654321" },
+                    { id: 3, name: "DEF Industries", gstin: "33CDEF1122334455" }
+                ];
+                
+                const filtered = mockCustomers.filter(customer => 
+                    customer.name.toLowerCase().includes(query.toLowerCase()) ||
+                    customer.gstin.includes(query)
+                );
+                
+                if (filtered.length > 0) {
+                    customerSearchResults.innerHTML = filtered.map(customer => 
+                        `<div class="customer-result" data-id="${customer.id}" data-name="${customer.name}" data-gstin="${customer.gstin}">
+                            <strong>${customer.name}</strong><br>
+                            <small>${customer.gstin}</small>
+                        </div>`
+                    ).join('');
+                    customerSearchResults.classList.remove('hidden');
+                } else {
+                    customerSearchResults.classList.add('hidden');
+                }
+            });
+            
+            // Customer selection
+            customerSearchResults.addEventListener('click', function(e) {
+                if (e.target.classList.contains('customer-result')) {
+                    const customer = e.target;
+                    customerId.value = customer.dataset.id;
+                    customerName.value = customer.dataset.name;
+                    customerGstin.value = customer.dataset.gstin;
+                    customerSearch.value = customer.dataset.name;
+                    customerSearchResults.classList.add('hidden');
+                }
+            });
+            
+            // Cascading dropdown logic
+            function populateServiceType() {
+                const selectedDirection = direction.value;
+                serviceType.innerHTML = '<option value="">Select Service Type</option>';
+                serviceType.disabled = true;
+                
+                if (selectedDirection && slbStructure[selectedDirection]) {
+                    const services = Object.keys(slbStructure[selectedDirection]);
+                    services.forEach(service => {
+                        const option = document.createElement('option');
+                        option.value = service;
+                        option.textContent = service;
+                        serviceType.appendChild(option);
+                    });
+                    serviceType.disabled = false;
+                }
+                
+                resetSubsequentSelects(serviceType);
+            }
+            
+            function populateCargoType() {
+                const selectedDirection = direction.value;
+                const selectedService = serviceType.value;
+                cargoType.innerHTML = '<option value="">Select Cargo Type</option>';
+                cargoType.disabled = true;
+                
+                if (selectedDirection && selectedService && slbStructure[selectedDirection][selectedService]) {
+                    const cargoTypes = Object.keys(slbStructure[selectedDirection][selectedService]);
+                    cargoTypes.forEach(cargo => {
+                        const option = document.createElement('option');
+                        option.value = cargo;
+                        option.textContent = cargo;
+                        cargoType.appendChild(option);
+                    });
+                    cargoType.disabled = false;
+                }
+                
+                resetSubsequentSelects(cargoType);
+            }
+            
+            function populateCurrency() {
+                const selectedDirection = direction.value;
+                const selectedService = serviceType.value;
+                const selectedCargo = cargoType.value;
+                currency.innerHTML = '<option value="">Select Currency</option>';
+                currency.disabled = true;
+                
+                if (selectedDirection && selectedService && selectedCargo && 
+                    slbStructure[selectedDirection][selectedService][selectedCargo]) {
+                    const currencies = Object.keys(slbStructure[selectedDirection][selectedService][selectedCargo]);
+                    currencies.forEach(curr => {
+                        const option = document.createElement('option');
+                        option.value = curr;
+                        option.textContent = curr;
+                        currency.appendChild(option);
+                    });
+                    currency.disabled = false;
+                }
+                
+                resetSubsequentSelects(currency);
+            }
+            
+            function populateEquipment() {
+                const selectedDirection = direction.value;
+                const selectedService = serviceType.value;
+                const selectedCargo = cargoType.value;
+                const selectedCurrency = currency.value;
+                equipment.innerHTML = '<option value="">Select Equipment/Type</option>';
+                equipment.disabled = true;
+                
+                if (selectedDirection && selectedService && selectedCargo && selectedCurrency && 
+                    slbStructure[selectedDirection][selectedService][selectedCargo][selectedCurrency]) {
+                    const equipments = Object.keys(slbStructure[selectedDirection][selectedService][selectedCargo][selectedCurrency]);
+                    equipments.forEach(eq => {
+                        const option = document.createElement('option');
+                        option.value = eq;
+                        option.textContent = eq;
+                        equipment.appendChild(option);
+                    });
+                    equipment.disabled = false;
+                }
+                
+                resetSubsequentSelects(equipment);
+            }
+            
+                         function populateRateBasis() {
+                 const selectedDirection = direction.value;
+                 const selectedService = serviceType.value;
+                 const selectedCargo = cargoType.value;
+                 const selectedCurrency = currency.value;
+                 const selectedEquipment = equipment.value;
+                 rateBasis.innerHTML = '<option value="">Select Rate Basis</option>';
+                 rateBasis.disabled = true;
+                 
+                 if (selectedDirection && selectedService && selectedCargo && selectedCurrency && selectedEquipment) {
+                     const rateBasisValue = slbStructure[selectedDirection][selectedService][selectedCargo][selectedCurrency][selectedEquipment];
+                     
+                     if (rateBasisValue) {
+                         // Handle both string and object values
+                         let displayValue = rateBasisValue;
+                         if (typeof rateBasisValue === 'object') {
+                             displayValue = JSON.stringify(rateBasisValue);
+                         }
+                         
+                         const option = document.createElement('option');
+                         option.value = displayValue;
+                         option.textContent = displayValue;
+                         rateBasis.appendChild(option);
+                         rateBasis.disabled = false;
+                         
+                         // Show rate information
+                         showRateInfo(selectedDirection, selectedService, selectedCargo, selectedCurrency, selectedEquipment);
+                     } else {
+                         hideRateInfo();
+                     }
+                 } else {
+                     hideRateInfo();
+                 }
+             }
+            
+            function resetSubsequentSelects(currentSelect) {
+                if (currentSelect === direction) {
+                    resetSubsequentSelects(serviceType);
+                } else if (currentSelect === serviceType) {
+                    resetSubsequentSelects(cargoType);
+                } else if (currentSelect === cargoType) {
+                    resetSubsequentSelects(currency);
+                } else if (currentSelect === currency) {
+                    resetSubsequentSelects(equipment);
+                } else if (currentSelect === equipment) {
+                    rateBasis.innerHTML = '<option value="">Select Equipment First</option>';
+                    rateBasis.disabled = true;
+                    hideRateInfo();
+                }
+            }
+            
+            function showRateInfo(direction, service, cargo, currency, equipment) {
+                let infoText = "";
+                
+                // Special rate information based on selections
+                if (service === "Inbound Transportation" && cargo === "FCL") {
+                    infoText = "For HAZ 50% additional.";
+                } else if (service === "Handling" && cargo === "Higher of") {
+                    infoText = "Higher of USD rates for CBM/Ton or Box/Pallet";
+                } else if (service === "Handling" && cargo === "Additional MHE for ODC") {
+                    infoText = "Additional MHE charges for Over Dimensional Cargo";
+                }
+                
+                if (infoText) {
+                    rateInfoText.textContent = infoText;
+                    rateInfo.classList.remove('hidden');
+                } else {
+                    hideRateInfo();
+                }
+            }
+            
+            function hideRateInfo() {
+                rateInfo.classList.add('hidden');
+            }
+            
+            // Event listeners for cascading selects
+            direction.addEventListener('change', populateServiceType);
+            serviceType.addEventListener('change', populateCargoType);
+            cargoType.addEventListener('change', populateCurrency);
+            currency.addEventListener('change', populateEquipment);
+            equipment.addEventListener('change', populateRateBasis);
+            
+            // Form submission
+            form.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                // Collect form data
+                const formData = new FormData(form);
+                const data = Object.fromEntries(formData);
+                
+                // Validate required fields
+                if (!data.customer_id || !data.boe_number || !data.warehouse || !data.direction || 
+                    !data.serviceType || !data.cargoType || !data.currency || !data.equipment || !data.rateBasis) {
+                    alert('Please fill in all required fields');
+                    return;
+                }
+                
+                // Show success message
+                alert('Shipment setup completed successfully!');
+                console.log('Shipment Data:', data);
+                
+                // Here you would typically send the data to your backend
+                // For now, we'll just log it to the console
+            });
+        });
+    </script>
+</body>
+</html>

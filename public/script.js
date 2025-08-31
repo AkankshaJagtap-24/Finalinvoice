@@ -19,6 +19,7 @@ const loadingSpinner = document.getElementById('loadingSpinner');
 const dashboardPage = document.getElementById('dashboardPage');
 const addShipmentPage = document.getElementById('addShipmentPage');
 const viewInvoicesPage = document.getElementById('viewInvoicesPage');
+const shipmentSetupPage = document.getElementById('shipmentSetupPage');
 
 // Form elements
 const shipmentForm = document.getElementById('shipmentForm');
@@ -445,6 +446,9 @@ function handleNavigation(e) {
             case 'viewInvoices':
                 showViewInvoicesPage();
                 break;
+            case 'shipmentSetup':
+                showShipmentSetupPage();
+                break;
         }
     }
 }
@@ -470,10 +474,20 @@ function showViewInvoicesPage() {
     loadInvoices();
 }
 
+function showShipmentSetupPage() {
+    hideAllPages();
+    shipmentSetupPage.classList.remove('hidden');
+    pageTitle.textContent = 'Shipment Setup';
+    
+    // Initialize the shipment setup functionality
+    setTimeout(initializeShipmentSetup, 100);
+}
+
 function hideAllPages() {
     dashboardPage.classList.add('hidden');
     addShipmentPage.classList.add('hidden');
     viewInvoicesPage.classList.add('hidden');
+    shipmentSetupPage.classList.add('hidden');
 }
 
 function showDashboard() {
@@ -518,34 +532,32 @@ function handleShipmentTypeChange() {
     if (type) {
         subtypeSelect.disabled = false;
         
-        if (type === 'A) INBOUND') {
+        if (type === 'INBOUND') {
             subtypeSelect.innerHTML = `
                 <option value="">Select Subtype</option>
-                <option value="FC to FTWZ BOE">FC to FTWZ BOE</option>
+                <option value="FC to FTWZ BOE">FC to FTWZ</option>
                 <option value="DTA to FTWZ">DTA to FTWZ</option>
                 <option value="Port to FTWZ">Port to FTWZ</option>
             `;
             // Enable category and populate
             categorySelect.disabled = false;
-            populateCategories('A) INBOUND');
-        } else if (type === 'G) OUTBOUND') {
+            populateCategories('INBOUND');
+        } else if (type === 'OUTBOUND') {
             subtypeSelect.innerHTML = `
                 <option value="">Select Subtype</option>
                 <option value="FTWZ to DTA">FTWZ to DTA</option>
-                <option value="FTWZ to FC">FTWZ to FC</option>
-                <option value="Intra SEZ">Intra SEZ</option>
-                <option value="FTWZ to Port">FTWZ to Port</option>
+                <option value="FTWZ to FC">FTWZ to FC</option> 
             `;
             categorySelect.disabled = false;
-            populateCategories('G) OUTBOUND');
+            populateCategories('OUTBOUND');
         }
     }
 }
 
 // Data model for cascading selects (3-level hierarchy: Currency → Container/Shipment Type → Unit of Measurement)
 const BILLING_STRUCTURE = {
-    'A) INBOUND': {
-        'A) Customs Clearance': {
+    'INBOUND': {
+        'Customs Clearance': {
             'New Fixed Asset (FA)': {
                 'INR': {
                     'TEU (20\')': ['Per TEU', 'Per TEU / BOE'],
@@ -654,8 +666,8 @@ const BILLING_STRUCTURE = {
             }
         }
     },
-    'G) OUTBOUND': {
-        'G) Customs Clearance': {
+    'OUTBOUND': {
+        'Customs Clearance': {
             'New Fixed Asset (FA)': {
                 'INR': {
                     'TEU (20\')': ['Per TEU', 'Per TEU / BOE'],
@@ -776,11 +788,11 @@ const BILLING_STRUCTURE = {
 function testBillingStructure() {
     console.log('Testing BILLING_STRUCTURE...');
     console.log('Available types:', Object.keys(BILLING_STRUCTURE));
-    console.log('INBOUND categories:', Object.keys(BILLING_STRUCTURE['A) INBOUND']));
-    console.log('Customs Clearance subcategories:', Object.keys(BILLING_STRUCTURE['A) INBOUND']['A) Customs Clearance']));
-    console.log('New Fixed Asset currencies:', Object.keys(BILLING_STRUCTURE['A) INBOUND']['A) Customs Clearance']['New Fixed Asset (FA)']));
-    console.log('INR details:', Object.keys(BILLING_STRUCTURE['A) INBOUND']['A) Customs Clearance']['New Fixed Asset (FA)']['INR']));
-    console.log('TEU (20\') units:', BILLING_STRUCTURE['A) INBOUND']['A) Customs Clearance']['New Fixed Asset (FA)']['INR']['TEU (20\')']);
+    console.log('INBOUND categories:', Object.keys(BILLING_STRUCTURE['INBOUND']));
+    console.log('Customs Clearance subcategories:', Object.keys(BILLING_STRUCTURE['INBOUND']['Customs Clearance']));
+    console.log('New Fixed Asset currencies:', Object.keys(BILLING_STRUCTURE['INBOUND']['Customs Clearance']['New Fixed Asset (FA)']));
+    console.log('INR details:', Object.keys(BILLING_STRUCTURE['INBOUND']['Customs Clearance']['New Fixed Asset (FA)']['INR']));
+    console.log('TEU (20\') units:', BILLING_STRUCTURE['INBOUND']['Customs Clearance']['New Fixed Asset (FA)']['INR']['TEU (20\')']);
     
     // Test manual dropdown population
     console.log('Testing manual dropdown population...');
@@ -791,7 +803,7 @@ function testBillingStructure() {
     if (subcategorySelect) {
         console.log('Subcategory select found, populating...');
         subcategorySelect.innerHTML = '<option value="">Select Sub-category</option>';
-        const subcategories = Object.keys(BILLING_STRUCTURE['A) INBOUND']['A) Customs Clearance']);
+        const subcategories = Object.keys(BILLING_STRUCTURE['INBOUND']['Customs Clearance']);
         subcategories.forEach(sub => {
             const opt = document.createElement('option');
             opt.value = sub;
@@ -805,12 +817,12 @@ function testBillingStructure() {
             console.log('Testing detail dropdown population...');
             const testSubcategory = 'New Fixed Asset (FA)';
             const testCurrency = 'INR';
-            const detailData = BILLING_STRUCTURE['A) INBOUND']['A) Customs Clearance'][testSubcategory][testCurrency];
+            const detailData = BILLING_STRUCTURE['INBOUND']['Customs Clearance'][testSubcategory][testCurrency];
             console.log('Test detail data:', detailData);
             
             detailSelect.innerHTML = '<option value="">Select Detail</option>';
             if (detailData && Array.isArray(detailData)) {
-                Object.keys(BILLING_STRUCTURE['A) INBOUND']['A) Customs Clearance'][testSubcategory][testCurrency]).forEach(detail => {
+                Object.keys(BILLING_STRUCTURE['INBOUND']['Customs Clearance'][testSubcategory][testCurrency]).forEach(detail => {
                     const opt = document.createElement('option');
                     opt.value = detail;
                     opt.textContent = detail;
@@ -3063,4 +3075,449 @@ window.showInvoiceModal = showInvoiceModal;
 window.finalizeInvoice = finalizeInvoice;
 window.downloadInvoicePDF = downloadInvoicePDF;
 window.printInvoice = printInvoice;
-window.printInvoice = printInvoice;
+
+
+// Shipment Setup Functionality
+let shipmentSetupInitialized = false;
+
+function initializeShipmentSetup() {
+    if (shipmentSetupInitialized) return;
+    
+    const direction = document.getElementById('direction');
+    const serviceType = document.getElementById('serviceType');
+    const cargoType = document.getElementById('cargoType');
+    const currency = document.getElementById('currency');
+    const equipment = document.getElementById('equipment');
+    const rateBasis = document.getElementById('rateBasis');
+    const rateInfo = document.getElementById('rateInfo');
+    const rateInfoText = document.getElementById('rateInfoText');
+    
+
+    
+    // Customer search functionality
+    const customerSearch = document.getElementById('customerSearch');
+    const customerSearchResults = document.getElementById('customerSearchResults');
+    const customerId = document.getElementById('customerId');
+    const customerName = document.getElementById('customerName');
+    const customerGstin = document.getElementById('customerGstin');
+    
+    if (!direction || !serviceType || !cargoType || !currency || !equipment || !rateBasis) {
+        return; // Elements not found, skip initialization
+    }
+    
+    // SLB Billing Structure Data based on the document
+    const slbStructure = {
+        INBOUND: {
+            "Customs Clearance": {
+                "New Fixed Asset (FA)": {
+                    "INR": {
+                        "TEU (20')": "Per TEU / BOE",
+                        "FEU (40')": "Per FEU / BOE",
+                        "LCL-SEA": "Per Vehicle / BOE",
+                        "LCL-AIR": "Per Vehicle / BOE",
+                        "Road": "Per Vehicle / BOE"
+                    }
+                },
+                "Machinery & Spares (M&S)": {
+                    "INR": {
+                        "TEU (20')": "Per TEU / BOE",
+                        "FEU (40')": "Per FEU / BOE",
+                        "LCL-SEA": "Per Vehicle / BOE",
+                        "LCL-AIR": "Per Vehicle / BOE",
+                        "Road": "Per Vehicle / BOE"
+                    }
+                },
+                "Chemicals (Dangerous Goods (DG))": {
+                    "INR": {
+                        "TEU (20')": "Per TEU / BOE",
+                        "FEU (40')": "Per FEU / BOE",
+                        "LCL-SEA": "Per Vehicle / BOE",
+                        "LCL-AIR": "Per Vehicle / BOE",
+                        "Road": "Per Vehicle / BOE"
+                    }
+                },
+                "Chemicals (Non DG)": {
+                    "INR": {
+                        "TEU (20')": "Per TEU / BOE",
+                        "FEU (40')": "Per FEU / BOE",
+                        "LCL-SEA": "Per Vehicle / BOE",
+                        "LCL-AIR": "Per Vehicle / BOE",
+                        "Road": "Per Vehicle / BOE"
+                    }
+                },
+                "Old & Used": {
+                    "INR": {
+                        "TEU": "Per Vehicle / BOE",
+                        "FEU": "Per Vehicle / BOE",
+                        "LCL": "Per Vehicle / BOE"
+                    }
+                }
+            },
+            "CE Certification": {
+                "Old & Used": {
+                    "INR": {
+                        "Per Document": "Per Document"
+                    }
+                }
+            },
+            "Inbound Transportation": {
+                "FCL": {
+                    "INR": {
+                        "TEU (20')": "Port to FTWZ and Empty Return - Per TEU",
+                        "FEU (40')": "Port to FTWZ and Empty Return - Per FEU"
+                    }
+                },
+                "Gate In Charges": {
+                    "INR": {
+                        "Per Vehicle": "Per Vehicle"
+                    }
+                },
+                "Loading / Unloading": {
+                    "INR": {
+                        "Cargo upto 1 Ton / max 20 boxes": "Per Vehicle",
+                        "Cargo > 1 Ton / > 20 boxes": "Per Vehicle"
+                    }
+                },
+                "Transportation": {
+                    "INR": {
+                        "Upto 5 MT": "Per Vehicle",
+                        "20' Trailer": "Per Vehicle"
+                    }
+                }
+            },
+            "Handling": {
+                "Higher of": {
+                    "USD": {
+                        "Per CBM / Ton": "Per CBM / Ton",
+                        "Per Box / Pallet": "Per Box / Pallet"
+                    }
+                },
+                "Additional MHE for ODC": {
+                    "INR": {
+                        "Per Half Shift for 3MT Forklift / 5MT Hydra": "Per Half Shift",
+                        "Case to Case approval for MHE requirement > 3MT Forklift / 5MT Hydra": "Case to Case"
+                    }
+                }
+            },
+            "Documentation": {
+                "Per BOE": {
+                    "INR": {
+                        "Per BOE": "Per BOE"
+                    }
+                }
+            },
+            "Container Scanning": {
+                "Per Container": {
+                    "USD": {
+                        "Per TEU": "Per TEU",
+                        "Per FEU": "Per FEU"
+                    }
+                }
+            }
+        },
+        OUTBOUND: {
+            "Outbound Transportation": {
+                "FCL": {
+                    "INR": {
+                        "TEU (20')": "FTWZ to Port and Empty Return - Per TEU",
+                        "FEU (40')": "FTWZ to Port and Empty Return - Per FEU"
+                    }
+                },
+                "LCL": {
+                    "INR": {
+                        "Per Vehicle": "Per Vehicle"
+                    }
+                }
+            },
+            "Outbound Customs": {
+                "Per BOE": {
+                    "INR": {
+                        "Per BOE": "Per BOE"
+                    }
+                }
+            }
+        }
+    };
+    
+    // Customer search functionality
+    if (customerSearch && customerSearchResults) {
+        customerSearch.addEventListener('input', function() {
+            const query = this.value.trim();
+            if (query.length < 2) {
+                customerSearchResults.classList.add('hidden');
+                return;
+            }
+            
+            // Simulate customer search (replace with actual API call)
+            const mockCustomers = [
+                { id: 1, name: "ABC Company Ltd", gstin: "27AABC1234567890" },
+                { id: 2, name: "XYZ Corporation", gstin: "12BXYZ0987654321" },
+                { id: 3, name: "DEF Industries", gstin: "33CDEF1122334455" }
+            ];
+            
+            const filtered = mockCustomers.filter(customer => 
+                customer.name.toLowerCase().includes(query.toLowerCase()) ||
+                customer.gstin.includes(query)
+            );
+            
+            if (filtered.length > 0) {
+                customerSearchResults.innerHTML = filtered.map(customer => 
+                    `<div class="customer-result" data-id="${customer.id}" data-name="${customer.name}" data-gstin="${customer.gstin}">
+                        <strong>${customer.name}</strong><br>
+                        <small>${customer.gstin}</small>
+                    </div>`
+                ).join('');
+                customerSearchResults.classList.remove('hidden');
+            } else {
+                customerSearchResults.classList.add('hidden');
+            }
+        });
+        
+        // Customer selection
+        customerSearchResults.addEventListener('click', function(e) {
+            if (e.target.classList.contains('customer-result')) {
+                const customer = e.target;
+                customerId.value = customer.dataset.id;
+                customerName.value = customer.dataset.name;
+                customerGstin.value = customer.dataset.gstin;
+                customerSearch.value = customer.dataset.name;
+                customerSearchResults.classList.add('hidden');
+            }
+        });
+    }
+    
+    // Cascading dropdown logic
+    function populateServiceType() {
+        const selectedDirection = direction.value;
+        serviceType.innerHTML = '<option value="">Select Service Type</option>';
+        serviceType.disabled = true;
+        
+        if (selectedDirection && slbStructure[selectedDirection]) {
+            const services = Object.keys(slbStructure[selectedDirection]);
+            services.forEach(service => {
+                const option = document.createElement('option');
+                option.value = service;
+                option.textContent = service;
+                serviceType.appendChild(option);
+            });
+            serviceType.disabled = false;
+        }
+        
+        resetSubsequentSelects(serviceType);
+    }
+    
+    function populateCargoType() {
+        const selectedDirection = direction.value;
+        const selectedService = serviceType.value;
+        cargoType.innerHTML = '<option value="">Select Cargo Type</option>';
+        cargoType.disabled = true;
+        
+        if (selectedDirection && selectedService && slbStructure[selectedDirection][selectedService]) {
+            const cargoTypes = Object.keys(slbStructure[selectedDirection][selectedService]);
+            cargoTypes.forEach(cargo => {
+                const option = document.createElement('option');
+                option.value = cargo;
+                option.textContent = cargo;
+                cargoType.appendChild(option);
+            });
+            cargoType.disabled = false;
+        }
+        
+        resetSubsequentSelects(cargoType);
+    }
+    
+    function populateCurrency() {
+        const selectedDirection = direction.value;
+        const selectedService = serviceType.value;
+        const selectedCargo = cargoType.value;
+        currency.innerHTML = '<option value="">Select Currency</option>';
+        currency.disabled = true;
+        
+        if (selectedDirection && selectedService && selectedCargo && 
+            slbStructure[selectedDirection][selectedService][selectedCargo]) {
+            const currencies = Object.keys(slbStructure[selectedDirection][selectedService][selectedCargo]);
+            currencies.forEach(curr => {
+                const option = document.createElement('option');
+                option.value = curr;
+                option.textContent = curr;
+                currency.appendChild(option);
+            });
+            currency.disabled = false;
+        }
+        
+        resetSubsequentSelects(currency);
+    }
+    
+    function populateEquipment() {
+        const selectedDirection = direction.value;
+        const selectedService = serviceType.value;
+        const selectedCargo = cargoType.value;
+        const selectedCurrency = currency.value;
+        equipment.innerHTML = '<option value="">Select Equipment/Type</option>';
+        equipment.disabled = true;
+        
+        if (selectedDirection && selectedService && selectedCargo && selectedCurrency && 
+            slbStructure[selectedDirection][selectedService][selectedCargo][selectedCurrency]) {
+            const equipments = Object.keys(slbStructure[selectedDirection][selectedService][selectedCargo][selectedCurrency]);
+            equipments.forEach(eq => {
+                const option = document.createElement('option');
+                option.value = eq;
+                option.textContent = eq;
+                equipment.appendChild(option);
+            });
+            equipment.disabled = false;
+        }
+        
+        resetSubsequentSelects(equipment);
+    }
+    
+    function populateRateBasis() {
+        const selectedDirection = direction.value;
+        const selectedService = serviceType.value;
+        const selectedCargo = cargoType.value;
+        const selectedCurrency = currency.value;
+        const selectedEquipment = equipment.value;
+        rateBasis.innerHTML = '<option value="">Select Rate Basis</option>';
+        rateBasis.disabled = true;
+        
+        if (selectedDirection && selectedService && selectedCargo && selectedCurrency && selectedEquipment && 
+            slbStructure[selectedDirection][selectedService][selectedCargo][selectedCurrency][selectedEquipment]) {
+            const rateBasisValue = slbStructure[selectedDirection][selectedService][selectedCargo][selectedCurrency][selectedEquipment];
+            
+            if (rateBasisValue) {
+                // Handle both string and object values
+                let displayValue = rateBasisValue;
+                if (typeof rateBasisValue === 'object') {
+                    displayValue = JSON.stringify(rateBasisValue);
+                }
+                
+                const option = document.createElement('option');
+                option.value = displayValue;
+                option.textContent = displayValue;
+                rateBasis.appendChild(option);
+                rateBasis.disabled = false;
+                
+                // Show rate information
+                showRateInfo(selectedDirection, selectedService, selectedCargo, selectedCurrency, selectedEquipment);
+            } else {
+                hideRateInfo();
+            }
+        } else {
+            hideRateInfo();
+        }
+    }
+    
+    function resetSubsequentSelects(currentSelect) {
+        if (currentSelect === direction) {
+            resetSubsequentSelects(serviceType);
+        } else if (currentSelect === serviceType) {
+            resetSubsequentSelects(cargoType);
+        } else if (currentSelect === cargoType) {
+            resetSubsequentSelects(currency);
+        } else if (currentSelect === currency) {
+            resetSubsequentSelects(equipment);
+        } else if (currentSelect === equipment) {
+            rateBasis.innerHTML = '<option value="">Select Equipment First</option>';
+            rateBasis.disabled = true;
+            hideRateInfo();
+        }
+    }
+    
+    function showRateInfo(direction, service, cargo, currency, equipment) {
+        let infoText = "";
+        
+        // Special rate information based on selections
+        if (service === "Inbound Transportation" && cargo === "FCL") {
+            infoText = "Non HAZ rates. For HAZ 50% additional. Pro rata basis Fuel Rate – Base rate (01 June 2022 as Rs 97.28 per ltr.";
+        } else if (service === "Handling" && cargo === "Higher of") {
+            infoText = "Higher of USD rates for CBM/Ton or Box/Pallet";
+        } else if (service === "Handling" && cargo === "Additional MHE for ODC") {
+            infoText = "Additional MHE charges for Over Dimensional Cargo";
+        }
+        
+        if (infoText) {
+            rateInfoText.textContent = infoText;
+            rateInfo.classList.remove('hidden');
+        } else {
+            hideRateInfo();
+        }
+    }
+    
+    function hideRateInfo() {
+        rateInfo.classList.add('hidden');
+    }
+    
+    // Event listeners for cascading selects
+    direction.addEventListener('change', populateServiceType);
+    serviceType.addEventListener('change', populateCargoType);
+    cargoType.addEventListener('change', populateCurrency);
+    currency.addEventListener('change', populateEquipment);
+    equipment.addEventListener('change', populateRateBasis);
+    
+    // Event listeners for HAZ and ODC fields
+    const hazStatus = document.getElementById('hazStatus');
+    const odcToggle = document.getElementById('odcToggle');
+    const dimensions = document.getElementById('dimensions');
+    const dimensionsLabel = document.getElementById('dimensionsLabel');
+    
+    if (hazStatus && odcToggle && dimensions && dimensionsLabel) {
+        // HAZ status change handler
+        hazStatus.addEventListener('change', function() {
+            this.setAttribute('data-status', this.value);
+        });
+        
+        // ODC toggle handler
+        odcToggle.addEventListener('change', function() {
+            if (this.value === 'yes') {
+                dimensions.required = true;
+                dimensionsLabel.classList.add('odc-required');
+                dimensions.style.borderColor = '#dc3545';
+                dimensions.placeholder = 'ODC Dimensions Required (L x W x H cm)';
+            } else {
+                dimensions.required = false;
+                dimensionsLabel.classList.remove('odc-required');
+                dimensions.style.borderColor = '';
+                dimensions.placeholder = 'e.g., 100 x 50 x 75';
+            }
+        });
+        
+        // Initialize HAZ status
+        hazStatus.setAttribute('data-status', hazStatus.value);
+    }
+    
+    // Form submission for shipment setup
+    const shipmentSetupForm = document.getElementById('shipmentSetupForm');
+    if (shipmentSetupForm) {
+        shipmentSetupForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            // Collect form data
+            const formData = new FormData(shipmentSetupForm);
+            const data = Object.fromEntries(formData);
+            
+            // Validate essential fields
+            if (!data.direction || !data.warehouse || !data.quantity || !data.unit) {
+                showToast('error', 'Please fill in Direction, Warehouse, Quantity, and Unit');
+                return;
+            }
+            
+            // Validate ODC dimensions if ODC is selected
+            if (data.odcToggle === 'yes' && !data.dimensions) {
+                showToast('error', 'ODC Dimensions are required when ODC Cargo is selected');
+                return;
+            }
+            
+            // Show success message
+            showToast('success', 'Shipment setup completed successfully!');
+            
+            // Here you would typically send the data to your backend
+            // For now, we'll just log it to the console
+            console.log('Shipment Data:', data);
+        });
+    }
+    
+    shipmentSetupInitialized = true;
+}
+
+
+

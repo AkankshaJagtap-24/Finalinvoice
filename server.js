@@ -36,7 +36,7 @@ app.use(session({
 const db = mysql.createConnection({
   host: 'localhost',
   user: 'root',
-  password: 'ASA#60kjk_@',
+  password: 'Sunil@123',
   database: 'accex_shipment_db'
 });
 

@@ -112,6 +112,12 @@
                         <span>View Invoices</span>
                     </a>
                 </li>
+                <li class="nav-item" data-page="shipmentSetup">
+                    <a href="#" class="nav-link">
+                        <i class="fas fa-cogs"></i>
+                        <span>Shipment Setup</span>
+                    </a>
+                </li>
             </ul>
             
             <div class="sidebar-footer">
@@ -161,11 +167,24 @@
                             <div class="form-row">
                                 <div class="form-col">
                                     <div class="form-group">
+                                        <label for="billToSearch" class="required">Bill To (Search by Company Name or GSTIN)</label>
+                                        <div class="search-container">
+                                            <input type="text" id="billToSearch" placeholder="Type company name or GSTIN number..." autocomplete="off">
+                                            <div id="billToSearchResults" class="dropdown-results hidden"></div>
+                                        </div>
+                                        <input type="hidden" id="customerSelect" name="customer_id" required>
+                                        <!-- <button type="button" id="testDropdown" style="margin-top: 10px; padding: 5px 10px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer;">Test Dropdown</button>
+                                        <button type="button" id="testSearch" style="margin-top: 10px; margin-left: 10px; padding: 5px 10px; background: #28a745; color: white; border: none; border-radius: 4px; cursor: pointer;">Test Search</button>
+                                        <button type="button" id="testBilling" style="margin-top: 10px; margin-left: 10px; padding: 5px 10px; background: #ffc107; color: black; border: none; border-radius: 4px; cursor: pointer;">Test Billing</button> -->
+                                    </div>
+                                </div>
+                                <div class="form-col">
+                                    <div class="form-group">
                                         <label for="shipment_type" class="required">Shipment Type</label>
                                         <select id="shipment_type" name="shipment_type" required>
                                             <option value="">Select Shipment Type</option>
-                                            <option value="A) INBOUND">A) INBOUND</option>
-                                            <option value="G) OUTBOUND">G) OUTBOUND</option>
+                                            <option value="INBOUND">INBOUND</option>
+                                            <option value="OUTBOUND">OUTBOUND</option>
                                         </select>
                                     </div>
                                 </div>
@@ -252,19 +271,7 @@
                             </div>
                             
                             <div class="form-row">
-                                <div class="form-col">
-                                    <div class="form-group">
-                                        <label for="billToSearch" class="required">Bill To (Search by Company Name or GSTIN)</label>
-                                        <div class="search-container">
-                                            <input type="text" id="billToSearch" placeholder="Type company name or GSTIN number..." autocomplete="off">
-                                            <div id="billToSearchResults" class="dropdown-results hidden"></div>
-                                        </div>
-                                        <input type="hidden" id="customerSelect" name="customer_id" required>
-                                        <button type="button" id="testDropdown" style="margin-top: 10px; padding: 5px 10px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer;">Test Dropdown</button>
-                                        <button type="button" id="testSearch" style="margin-top: 10px; margin-left: 10px; padding: 5px 10px; background: #28a745; color: white; border: none; border-radius: 4px; cursor: pointer;">Test Search</button>
-                                        <button type="button" id="testBilling" style="margin-top: 10px; margin-left: 10px; padding: 5px 10px; background: #ffc107; color: black; border: none; border-radius: 4px; cursor: pointer;">Test Billing</button>
-                                    </div>
-                                </div>
+                              
                                 
                                 <div class="form-col">
                                     <div class="form-group">
@@ -273,6 +280,12 @@
                                     </div>
                                 </div>
                                 
+                                <div class="form-col">
+                                    <div class="form-group">
+                                        <label for="weight" class="required">Weight</label>
+                                        <input type="number" id="weight" name="weight" placeholder="Enter Weight" required>
+                                    </div>
+                                </div>
                                 <div class="form-col">
                                     <div class="form-group">
                                         <label for="odc" class="required">ODC</label>
@@ -316,7 +329,7 @@
                                 </div>
                             </div>
                             
-                            <div id="customerDetails" class="form-card mt-md hidden">
+                            <!-- <div id="customerDetails" class="form-card mt-md hidden">
                                 <div class="form-header">
                                     <h4 class="form-title">Customer Details</h4>
                                 </div>
@@ -353,7 +366,7 @@
                                         </div>
                                     </div>
                                 </div>
-                            </div>
+                            </div> -->
                             
                             <div class="form-actions">
                                 <button type="reset" class="btn btn-secondary">
@@ -364,6 +377,260 @@
                                 </button>
                             </div>
                         </form>
+                    </div>
+                </div>
+                
+                <!-- Shipment Setup Page -->
+                <div id="shipmentSetupPage" class="page hidden">
+                    <div class="form-card">
+                        <div class="form-header">
+                            <h3 class="form-title">Shipment Setup</h3>
+                            <p class="form-subtitle">Configure your shipment with SLB billing structure hierarchy</p>
+                        </div>
+                        
+                        <div class="form-body">
+                            <form id="shipmentSetupForm">
+                            <!-- Customer & BOE Section -->
+                            <div class="form-section">
+                                <h4 class="section-title">
+                                    <i class="fas fa-user"></i>
+                                    1. Customer & BOE Information
+                                </h4>
+                                <div class="form-row">
+                                    <div class="form-col">
+                                        <div class="form-group">
+                                            <label for="customerSearch" class="required">Search Customer</label>
+                                            <input type="text" id="customerSearch" placeholder="Type company name or GSTIN..." autocomplete="off">
+                                            <div id="customerSearchResults" class="dropdown-results hidden"></div>
+                                            <input type="hidden" id="customerId" name="customer_id" required>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="form-col">
+                                        <div class="form-group">
+                                            <label for="boeNumber" class="required">BOE Number</label>
+                                            <input type="text" id="boeNumber" name="boe_number" placeholder="Enter BOE number" required>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="form-col">
+                                        <div class="form-group">
+                                            <label for="customerName">Customer Name</label>
+                                            <input type="text" id="customerName" name="customer_name" readonly>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="form-col">
+                                        <div class="form-group">
+                                            <label for="customerGstin">Customer GSTIN</label>
+                                            <input type="text" id="customerGstin" name="customer_gstin" readonly>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Warehouse / Location Section -->
+                            <div class="form-section">
+                                <h4 class="section-title">
+                                    <i class="fas fa-warehouse"></i>
+                                    2. Warehouse / Location
+                                </h4>
+                                <div class="form-row">
+                                    <div class="form-col">
+                                        <div class="form-group">
+                                            <label for="warehouse" class="required">Select Warehouse</label>
+                                            <select id="warehouse" name="warehouse" required>
+                                                <option value="">Choose Warehouse</option>
+                                                <option value="chennai_ftwz">Chennai FTWZ</option>
+                                                <option value="mumbai_ftwz">Mumbai FTWZ</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- SLB Billing Structure Section -->
+                            <div class="form-section">
+                                <h4 class="section-title">
+                                    <i class="fas fa-sitemap"></i>
+                                    3. SLB Billing Structure
+                                </h4>
+                                <div class="info-box">
+                                    <i class="fas fa-info-circle"></i>
+                                    Follow the hierarchical structure: Direction → Service → Cargo Type → Currency → Equipment → Rate Basis
+                                </div>
+                                
+                                <div class="cascading-selects">
+                                    <!-- Row 1: Direction and Service Type -->
+                                    <div class="form-row">
+                                        <div class="form-col">
+                                            <div class="form-group">
+                                                <label for="direction" class="required">Direction</label>
+                                                <select id="direction" name="direction" required>
+                                                    <option value="">Select Direction</option>
+                                                    <option value="INBOUND">INBOUND</option>
+                                                    <option value="OUTBOUND">OUTBOUND</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="form-col">
+                                            <div class="form-group">
+                                                <label for="serviceType" class="required">Service Type</label>
+                                                <select id="serviceType" name="serviceType" required disabled>
+                                                    <option value="">Select Direction First</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Row 2: Cargo Type and Currency -->
+                                    <div class="form-row">
+                                        <div class="form-col">
+                                            <div class="form-group">
+                                                <label for="cargoType" class="required">Cargo Type</label>
+                                                <select id="cargoType" name="cargoType" required disabled>
+                                                    <option value="">Select Service Type First</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="form-col">
+                                            <div class="form-group">
+                                                <label for="currency" class="required">Currency</label>
+                                                <select id="currency" name="currency" required disabled>
+                                                    <option value="">Select Cargo Type First</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Row 3: Equipment/Type and Rate Basis -->
+                                    <div class="form-row">
+                                        <div class="form-col">
+                                            <div class="form-group">
+                                                <label for="equipment" class="required">Equipment/Type</label>
+                                                <select id="equipment" name="equipment" required disabled>
+                                                    <option value="">Select Currency First</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="form-col">
+                                            <div class="form-group">
+                                                <label for="rateBasis" class="required">Rate Basis</label>
+                                                <select id="rateBasis" name="rateBasis" required disabled>
+                                                    <option value="">Select Equipment First</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Rate Information Display -->
+                                <div id="rateInfo" class="rate-info hidden">
+                                    <i class="fas fa-info-circle"></i>
+                                    <span id="rateInfoText"></span>
+                                </div>
+                            </div>
+                            
+                            <!-- Additional Details Section -->
+                            <div class="form-section">
+                                <h4 class="section-title">
+                                    <i class="fas fa-clipboard-list"></i>
+                                    4. Additional Details
+                                </h4>
+                                
+                                <!-- HAZ/Non-HAZ and ODC Toggle Row -->
+                                <div class="form-row">
+                                    <div class="form-col">
+                                        <div class="form-group">
+                                            <label for="hazStatus" class="required">HAZ Status</label>
+                                            <select id="hazStatus" name="hazStatus" required>
+                                                <option value="nonhaz" selected>Non-HAZ</option>
+                                                <option value="haz">HAZ</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="form-col">
+                                        <div class="form-group">
+                                            <label for="odcToggle" class="required">ODC Cargo</label>
+                                            <select id="odcToggle" name="odcToggle" required>
+                                                <option value="no" selected>No</option>
+                                                <option value="yes">Yes</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Quantity and Unit Row -->
+                                <div class="form-row">
+                                    <div class="form-col">
+                                        <div class="form-group">
+                                            <label for="quantity" class="required">Quantity</label>
+                                            <input type="number" id="quantity" name="quantity" placeholder="Enter quantity" min="1" required>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="form-col">
+                                        <div class="form-group">
+                                            <label for="unit" class="required">Unit</label>
+                                            <select id="unit" name="unit" required>
+                                                <option value="">Select Unit</option>
+                                                <option value="packet">Packet</option>
+                                                <option value="box">Box</option>
+                                                <option value="piece">Piece</option>
+                                                <option value="carton">Carton</option>
+                                                <option value="pallet">Pallet</option>
+                                                <option value="container">Container</option>
+                                                <option value="kg">Kilogram (kg)</option>
+                                                <option value="ton">Ton</option>
+                                                <option value="cbm">Cubic Meter (CBM)</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Weight and Dimensions Row -->
+                                <div class="form-row">
+                                    <div class="form-col">
+                                        <div class="form-group">
+                                            <label for="weight">Weight (kg)</label>
+                                            <input type="number" id="weight" name="weight" placeholder="Enter weight in kg" min="0" step="0.01">
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="form-col">
+                                        <div class="form-group">
+                                            <label for="dimensions" id="dimensionsLabel">Dimensions (L x W x H cm)</label>
+                                            <input type="text" id="dimensions" name="dimensions" placeholder="e.g., 100 x 50 x 75">
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Special Instructions Row -->
+                                <div class="form-row">
+                                    <div class="form-col">
+                                        <div class="form-group">
+                                            <label for="specialInstructions">Special Instructions</label>
+                                            <textarea id="specialInstructions" class="form-control" name="specialInstructions" rows="3" placeholder="Any special handling requirements or instructions"></textarea>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Form Actions -->
+                            <div class="form-actions">
+                                <button type="reset" class="btn btn-secondary">
+                                    <i class="fas fa-undo"></i> Reset Form
+                                </button>
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-paper-plane"></i> Create Shipment
+                                </button>
+                            </div>
+                            </form>
+                        </div>
                     </div>
                 </div>
                 
