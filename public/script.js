@@ -148,6 +148,39 @@ function setupEventListeners() {
             });
         }
         
+        // New Mode of Transport event listeners
+        const shipmentSubtypeSelect = document.getElementById('shipment_subtype');
+        if (shipmentSubtypeSelect) {
+            shipmentSubtypeSelect.addEventListener('change', handleShipmentSubtypeChange);
+        }
+        
+        const modeOfTransportSelect = document.getElementById('mode_of_transport');
+        if (modeOfTransportSelect) {
+            modeOfTransportSelect.addEventListener('change', handleModeOfTransportChange);
+        }
+        
+        const seaOptionSelect = document.getElementById('sea_option');
+        if (seaOptionSelect) {
+            seaOptionSelect.addEventListener('change', handleSeaOptionChange);
+        }
+        
+        const containerTypeSelect = document.getElementById('container_type');
+        if (containerTypeSelect) {
+            containerTypeSelect.addEventListener('change', handleContainerTypeChange);
+        }
+        
+        const vehicleTypeSelect = document.getElementById('vehicle_type');
+        if (vehicleTypeSelect) {
+            vehicleTypeSelect.addEventListener('change', handleVehicleTypeChange);
+        }
+        
+        const newUnitsSelect = document.getElementById('units');
+        if (newUnitsSelect) {
+            newUnitsSelect.addEventListener('change', function() {
+                clearFieldValidation(this.id);
+            });
+        }
+        
         // Clear validation on input
         const formInputs = shipmentForm.querySelectorAll('input, select');
         formInputs.forEach(input => {
@@ -506,51 +539,255 @@ function showLoginPage() {
 function handleShipmentTypeChange() {
     const type = document.getElementById('shipment_type').value;
     const subtypeSelect = document.getElementById('shipment_subtype');
-    const categorySelect = document.getElementById('shipment_category');
-    const subcategorySelect = document.getElementById('shipment_currency'); // This is now the subcategory field
-    const currencySelect = document.getElementById('shipment_subcategory'); // This is now the currency field
-    const detailSelect = document.getElementById('shipment_detail');
+    const modeOfTransportSelect = document.getElementById('mode_of_transport');
+    const seaOptionSelect = document.getElementById('sea_option');
+    const containerTypeSelect = document.getElementById('container_type');
+    const vehicleTypeSelect = document.getElementById('vehicle_type');
+    const unitsSelect = document.getElementById('units');
     
-    // Clear and disable subtype
-    subtypeSelect.innerHTML = '<option value="">Select Shipment Type First</option>';
+    // Clear and disable all dependent selects
+    subtypeSelect.innerHTML = '<option value="">Select Direction First</option>';
     subtypeSelect.disabled = true;
-    // Reset cascading selects
-    categorySelect.innerHTML = '<option value="">Select Shipment Type First</option>';
-    subcategorySelect.innerHTML = '<option value="">Select Category First</option>';
-    currencySelect.innerHTML = '<option value="">Select Sub-category First</option>';
-    detailSelect.innerHTML = '<option value="">Select Currency First</option>';
-    const unitsSelect = document.getElementById('shipment_units');
-    if (unitsSelect) {
-        unitsSelect.innerHTML = '<option value="">Select Detail First</option>';
-        unitsSelect.disabled = true;
-    }
-    categorySelect.disabled = true;
-    subcategorySelect.disabled = true;
-    currencySelect.disabled = true;
-    detailSelect.disabled = true;
+    
+    // Reset mode of transport and all dependent selects
+    modeOfTransportSelect.innerHTML = '<option value="">Select Type of Shipment First</option>';
+    seaOptionSelect.innerHTML = '<option value="">Select Mode of Transport First</option>';
+    containerTypeSelect.innerHTML = '<option value="">Select Sea Option First</option>';
+    vehicleTypeSelect.innerHTML = '<option value="">Select appropriate option first</option>';
+    unitsSelect.innerHTML = '<option value="">Select appropriate option first</option>';
+    
+    modeOfTransportSelect.disabled = true;
+    seaOptionSelect.disabled = true;
+    containerTypeSelect.disabled = true;
+    vehicleTypeSelect.disabled = true;
+    unitsSelect.disabled = true;
     
     if (type) {
         subtypeSelect.disabled = false;
         
-        if (type === 'INBOUND') {
+        if (type === 'Inbound') {
             subtypeSelect.innerHTML = `
-                <option value="">Select Subtype</option>
-                <option value="FC to FTWZ BOE">FC to FTWZ</option>
+                <option value="">Select Type of Shipment</option>
+                <option value="FC to FTWZ">FC to FTWZ</option>
                 <option value="DTA to FTWZ">DTA to FTWZ</option>
-                <option value="Port to FTWZ">Port to FTWZ</option>
+                <option value="Temp removal">Temp removal</option>
+                <option value="Inter SEZ">Inter SEZ</option>
+                <option value="Intra">Intra</option>
             `;
-            // Enable category and populate
-            categorySelect.disabled = false;
-            populateCategories('INBOUND');
-        } else if (type === 'OUTBOUND') {
+        } else if (type === 'Outbound') {
             subtypeSelect.innerHTML = `
-                <option value="">Select Subtype</option>
-                <option value="FTWZ to DTA">FTWZ to DTA</option>
-                <option value="FTWZ to FC">FTWZ to FC</option> 
+                <option value="">Select Type of Shipment</option>
+                <option value="FTWZ To FC">FTWZ To FC</option>
+                <option value="FTWZ To DTA">FTWZ To DTA</option>
+                <option value="Temp removal">Temp removal</option>
+                <option value="Inter SEZ">Inter SEZ</option>
+                <option value="Intra">Intra</option>
             `;
-            categorySelect.disabled = false;
-            populateCategories('OUTBOUND');
         }
+    }
+}
+
+// Handle shipment subtype change to populate mode of transport
+function handleShipmentSubtypeChange() {
+    const subtype = document.getElementById('shipment_subtype').value;
+    const modeOfTransportSelect = document.getElementById('mode_of_transport');
+    const seaOptionSelect = document.getElementById('sea_option');
+    const containerTypeSelect = document.getElementById('container_type');
+    const vehicleTypeSelect = document.getElementById('vehicle_type');
+    const unitsSelect = document.getElementById('units');
+    
+    // Get column elements for visibility control
+    const seaOptionCol = document.getElementById('sea_option_col');
+    const containerTypeCol = document.getElementById('container_type_col');
+    const vehicleTypeCol = document.getElementById('vehicle_type_col');
+    
+    // Clear and disable all dependent selects
+    modeOfTransportSelect.innerHTML = '<option value="">Select Type of Shipment First</option>';
+    seaOptionSelect.innerHTML = '<option value="">Select Mode of Transport First</option>';
+    containerTypeSelect.innerHTML = '<option value="">Select Sea Option First</option>';
+    vehicleTypeSelect.innerHTML = '<option value="">Select appropriate option first</option>';
+    unitsSelect.innerHTML = '<option value="">Select appropriate option first</option>';
+    
+    // Hide all conditional columns
+    seaOptionCol.style.display = 'none';
+    containerTypeCol.style.display = 'none';
+    vehicleTypeCol.style.display = 'none';
+    
+    modeOfTransportSelect.disabled = true;
+    seaOptionSelect.disabled = true;
+    containerTypeSelect.disabled = true;
+    vehicleTypeSelect.disabled = true;
+    unitsSelect.disabled = true;
+    
+    if (subtype) {
+        modeOfTransportSelect.disabled = false;
+        
+        if (subtype === 'Intra') {
+            // For Intra, mode of transport is NA
+            modeOfTransportSelect.innerHTML = `
+                <option value="">Select Mode of Transport</option>
+                <option value="NA">NA</option>
+            `;
+        } else {
+            // For other types, show Air, Sea, Road
+            modeOfTransportSelect.innerHTML = `
+                <option value="">Select Mode of Transport</option>
+                <option value="Air">Air</option>
+                <option value="Sea">Sea</option>
+                <option value="Road">Road</option>
+            `;
+        }
+    }
+}
+
+// Handle mode of transport change
+function handleModeOfTransportChange() {
+    const modeOfTransport = document.getElementById('mode_of_transport').value;
+    const seaOptionSelect = document.getElementById('sea_option');
+    const containerTypeSelect = document.getElementById('container_type');
+    const vehicleTypeSelect = document.getElementById('vehicle_type');
+    const unitsSelect = document.getElementById('units');
+    
+    // Get column elements for visibility control
+    const seaOptionCol = document.getElementById('sea_option_col');
+    const containerTypeCol = document.getElementById('container_type_col');
+    const vehicleTypeCol = document.getElementById('vehicle_type_col');
+    
+    // Clear and disable all dependent selects
+    seaOptionSelect.innerHTML = '<option value="">Select Mode of Transport First</option>';
+    containerTypeSelect.innerHTML = '<option value="">Select Sea Option First</option>';
+    vehicleTypeSelect.innerHTML = '<option value="">Select appropriate option first</option>';
+    unitsSelect.innerHTML = '<option value="">Select appropriate option first</option>';
+    
+    // Hide all conditional columns initially
+    seaOptionCol.style.display = 'none';
+    containerTypeCol.style.display = 'none';
+    vehicleTypeCol.style.display = 'none';
+    
+    seaOptionSelect.disabled = true;
+    containerTypeSelect.disabled = true;
+    vehicleTypeSelect.disabled = true;
+    unitsSelect.disabled = true;
+    
+    if (modeOfTransport === 'NA') {
+        // For NA (Intra), skip to units
+        unitsSelect.disabled = false;
+        unitsSelect.innerHTML = `
+            <option value="">Select Units</option>
+            <option value="Per Unit">Per Unit</option>
+            <option value="Per Transaction">Per Transaction</option>
+        `;
+    } else if (modeOfTransport === 'Sea') {
+        // For Sea, show Sea Option column
+        seaOptionCol.style.display = 'block';
+        seaOptionSelect.disabled = false;
+        seaOptionSelect.innerHTML = `
+            <option value="">Select Sea Option</option>
+            <option value="FCL">FCL</option>
+            <option value="LCL">LCL</option>
+        `;
+    } else if (modeOfTransport === 'Air' || modeOfTransport === 'Road') {
+        // For Air and Road, show Vehicle Type column
+        vehicleTypeCol.style.display = 'block';
+        vehicleTypeSelect.disabled = false;
+        if (modeOfTransport === 'Air') {
+            vehicleTypeSelect.innerHTML = `
+                <option value="">Select Vehicle Type</option>
+                <option value="Aircraft">Aircraft</option>
+                <option value="Cargo Plane">Cargo Plane</option>
+            `;
+        } else {
+            vehicleTypeSelect.innerHTML = `
+                <option value="">Select Vehicle Type</option>
+                <option value="Truck">Truck</option>
+                <option value="Container Truck">Container Truck</option>
+                <option value="Trailer">Trailer</option>
+            `;
+        }
+    }
+}
+
+// Handle sea option change (FCL/LCL)
+function handleSeaOptionChange() {
+    const seaOption = document.getElementById('sea_option').value;
+    const containerTypeSelect = document.getElementById('container_type');
+    const vehicleTypeSelect = document.getElementById('vehicle_type');
+    const unitsSelect = document.getElementById('units');
+    
+    // Get column elements for visibility control
+    const containerTypeCol = document.getElementById('container_type_col');
+    const vehicleTypeCol = document.getElementById('vehicle_type_col');
+    
+    // Clear dependent selects
+    containerTypeSelect.innerHTML = '<option value="">Select Sea Option First</option>';
+    vehicleTypeSelect.innerHTML = '<option value="">Select appropriate option first</option>';
+    unitsSelect.innerHTML = '<option value="">Select appropriate option first</option>';
+    
+    // Hide both columns initially
+    containerTypeCol.style.display = 'none';
+    vehicleTypeCol.style.display = 'none';
+    
+    containerTypeSelect.disabled = true;
+    vehicleTypeSelect.disabled = true;
+    unitsSelect.disabled = true;
+    
+    if (seaOption === 'FCL') {
+        // For FCL, show Container Type column
+        containerTypeCol.style.display = 'block';
+        containerTypeSelect.disabled = false;
+        containerTypeSelect.innerHTML = `
+            <option value="">Select Container Type</option>
+            <option value="TEU (20')">TEU (20')</option>
+            <option value="TEU (40')">TEU (40')</option>
+            <option value="40' HC">40' HC</option>
+            <option value="Flat Rack">Flat Rack</option>
+        `;
+    } else if (seaOption === 'LCL') {
+        // For LCL, show Vehicle Type column
+        vehicleTypeCol.style.display = 'block';
+        vehicleTypeSelect.disabled = false;
+        vehicleTypeSelect.innerHTML = `
+            <option value="">Select Vehicle Type</option>
+            <option value="LCL Container">LCL Container</option>
+            <option value="LCL Cargo">LCL Cargo</option>
+        `;
+    }
+}
+
+// Handle container type change
+function handleContainerTypeChange() {
+    const containerType = document.getElementById('container_type').value;
+    const unitsSelect = document.getElementById('units');
+    
+    unitsSelect.innerHTML = '<option value="">Select appropriate option first</option>';
+    unitsSelect.disabled = true;
+    
+    if (containerType) {
+        unitsSelect.disabled = false;
+        unitsSelect.innerHTML = `
+            <option value="">Select Units</option>
+            <option value="Per TEU">Per TEU</option>
+            <option value="Per Container">Per Container</option>
+        `;
+    }
+}
+
+// Handle vehicle type change
+function handleVehicleTypeChange() {
+    const vehicleType = document.getElementById('vehicle_type').value;
+    const unitsSelect = document.getElementById('units');
+    
+    unitsSelect.innerHTML = '<option value="">Select appropriate option first</option>';
+    unitsSelect.disabled = true;
+    
+    if (vehicleType) {
+        unitsSelect.disabled = false;
+        unitsSelect.innerHTML = `
+            <option value="">Select Units</option>
+            <option value="Per Vehicle">Per Vehicle</option>
+            <option value="Per Unit">Per Unit</option>
+            <option value="Per Transaction">Per Transaction</option>
+        `;
     }
 }
 
@@ -1387,12 +1624,12 @@ async function handleShipmentSubmit(e) {
         // Compose detailed subtype path for readability and future pricing
         shipment_subtype: (function(){
             const base = formData.get('shipment_subtype') || '';
-            const cat = formData.get('shipment_category') || '';
-            const sub = formData.get('shipment_currency') || ''; // This is now the subcategory field
-            const cur = formData.get('shipment_subcategory') || ''; // This is now the currency field
-            const det = formData.get('shipment_detail') || '';
-            const units = formData.get('shipment_units') || '';
-            const parts = [base, cat, sub, cur, det, units].filter(Boolean);
+            const mode = formData.get('mode_of_transport') || '';
+            const seaOption = formData.get('sea_option') || '';
+            const containerType = formData.get('container_type') || '';
+            const vehicleType = formData.get('vehicle_type') || '';
+            const units = formData.get('units') || '';
+            const parts = [base, mode, seaOption, containerType, vehicleType, units].filter(Boolean);
             return parts.join(' > ');
         })(),
         asc_number: formData.get('asc_number'),
@@ -1401,6 +1638,9 @@ async function handleShipmentSubmit(e) {
         customer_id: formData.get('customer_id'),
         cbm: formData.get('cbm'),
         odc: formData.get('odc'),
+        cargo_type: formData.get('cargo_type'),
+        haz_selection: formData.get('haz_selection'),
+        old_new_selection: formData.get('old_new_selection'),
         length: formData.get('length'),
         breadth: formData.get('breadth'),
         height: formData.get('height'),
@@ -1416,6 +1656,18 @@ async function handleShipmentSubmit(e) {
     
     if (!shipmentData.shipment_subtype) {
         errors.push({ field: 'shipment_subtype', message: 'Shipment subtype is required' });
+    }
+    
+    if (!shipmentData.cargo_type) {
+        errors.push({ field: 'cargo_type', message: 'Cargo type is required' });
+    }
+    
+    if (!shipmentData.haz_selection) {
+        errors.push({ field: 'haz_selection', message: 'HAZ selection is required' });
+    }
+    
+    if (!shipmentData.old_new_selection) {
+        errors.push({ field: 'old_new_selection', message: 'Old/New selection is required' });
     }
     
     // Validate subcategory field (now in shipment_currency)

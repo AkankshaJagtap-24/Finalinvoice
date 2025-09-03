@@ -180,68 +180,68 @@
                                 </div>
                                 <div class="form-col">
                                     <div class="form-group">
-                                        <label for="shipment_type" class="required">Shipment Type</label>
+                                        <label for="shipment_type" class="required">Direction</label>
                                         <select id="shipment_type" name="shipment_type" required>
-                                            <option value="">Select Shipment Type</option>
-                                            <option value="INBOUND">INBOUND</option>
-                                            <option value="OUTBOUND">OUTBOUND</option>
+                                            <option value="">Select Direction</option>
+                                            <option value="Inbound">Inbound</option>
+                                            <option value="Outbound">Outbound</option>
                                         </select>
                                     </div>
                                 </div>
                                 
                                 <div class="form-col">
                                     <div class="form-group">
-                                        <label for="shipment_subtype" class="required">Shipment Subtype</label>
+                                        <label for="shipment_subtype" class="required">Type of Shipment</label>
                                         <select id="shipment_subtype" name="shipment_subtype" required>
-                                            <option value="">Select Shipment Type First</option>
+                                            <option value="">Select Direction First</option>
                                         </select>
                                     </div>
                                 </div>
                             </div>
 
-                            <!-- Cascading Billing Structure -->
+                            <!-- Mode of Transport Structure -->
                             <div class="form-row">
                                 <div class="form-col">
                                     <div class="form-group">
-                                        <label for="shipment_category" class="required">Category</label>
-                                        <select id="shipment_category" name="shipment_category" disabled required>
-                                            <option value="">Select Shipment Type First</option>
+                                        <label for="mode_of_transport" class="required">Mode of Transport</label>
+                                        <select id="mode_of_transport" name="mode_of_transport" disabled required>
+                                            <option value="">Select Type of Shipment First</option>
                                         </select>
                                     </div>
                                 </div>
 
-                                <div class="form-col">
+                                <div class="form-col" id="sea_option_col" style="display: none;">
                                     <div class="form-group">
-                                        <label for="shipment_currency" class="required">Sub-category</label>
-                                        <select id="shipment_currency" name="shipment_currency" disabled required>
-                                            <option value="">Select Category First</option>
+                                        <label for="sea_option" class="required">Sea Option</label>
+                                        <select id="sea_option" name="sea_option" disabled>
+                                            <option value="">Select Mode of Transport First</option>
                                         </select>
                                     </div>
                                 </div>
 
-                                <div class="form-col">
+                                <div class="form-col" id="container_type_col" style="display: none;">
                                     <div class="form-group">
-                                        <label for="shipment_subcategory" class="required">Currency</label>
-                                        <select id="shipment_subcategory" name="shipment_subcategory" disabled required>
-                                            <option value="">Select Sub-category First</option>
+                                        <label for="container_type" class="required">Container Type</label>
+                                        <select id="container_type" name="container_type" disabled>
+                                            <option value="">Select Sea Option First</option>
                                         </select>
                                     </div>
                                 </div>
 
-                                <div class="form-col">
+                                <div class="form-col" id="vehicle_type_col" style="display: none;">
                                     <div class="form-group">
-                                        <label for="shipment_detail" class="required">Detail</label>
-                                        <select id="shipment_detail" name="shipment_detail" disabled required>
-                                            <option value="">Select Currency First</option>
+                                        <label for="vehicle_type" class="required">Vehicle Type</label>
+                                        <select id="vehicle_type" name="vehicle_type" disabled>
+                                            <option value="">Select appropriate option first</option>
                                         </select>
                                     </div>
                                 </div>
                                 
                                 <div class="form-col">
                                     <div class="form-group">
-                                        <label for="shipment_units" class="required">Units</label>
-                                        <select id="shipment_units" name="shipment_units" disabled required>
-                                            <option value="">Select Detail First</option>
+                                        <label for="units" class="required">Units</label>
+                                        <select id="units" name="units" disabled required>
+                                            <option value="">Select appropriate option first</option>
                                         </select>
                                     </div>
                                 </div>
@@ -292,6 +292,41 @@
                                         <select id="odc" name="odc" required>
                                             <option value="No">No</option>
                                             <option value="Yes">Yes</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Cargo Type and HAZ Selection Row -->
+                            <div class="form-row">
+                                <div class="form-col">
+                                    <div class="form-group">
+                                        <label for="cargo_type" class="required">Cargo Type</label>
+                                        <select id="cargo_type" name="cargo_type" required>
+                                            <option value="">Select Cargo Type</option>
+                                            <option value="Fixed assets">Fixed assets</option>
+                                            <option value="Chemicals">Chemicals</option>
+                                            <option value="Spares">Spares</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                
+                                <div class="form-col">
+                                    <div class="form-group">
+                                        <label for="haz_selection" class="required">HAZ Selection</label>
+                                        <select id="haz_selection" name="haz_selection" required>
+                                            <option value="No">No</option>
+                                            <option value="Yes">Yes</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                
+                                <div class="form-col">
+                                    <div class="form-group">
+                                        <label for="old_new_selection" class="required">Old/New Selection</label>
+                                        <select id="old_new_selection" name="old_new_selection" required>
+                                            <option value="New">New</option>
+                                            <option value="Old">Old</option>
                                         </select>
                                     </div>
                                 </div>

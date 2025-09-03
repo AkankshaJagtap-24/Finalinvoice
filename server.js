@@ -36,8 +36,9 @@ app.use(session({
 const db = mysql.createConnection({
   host: 'localhost',
   user: 'root',
-  password: 'Sunil@123',
-  database: 'accex_shipment_db'
+  password: 'ASA#60kjk_@',
+  database: 'accex_shipment_db',
+  multipleStatements: true
 });
 
 // Connect to MySQL
@@ -108,6 +109,12 @@ function createBasicTables() {
         
         CREATE TABLE IF NOT EXISTS shipments (
             id INT PRIMARY KEY AUTO_INCREMENT,
+            direction ENUM('Inbound', 'Outbound') NOT NULL DEFAULT 'Inbound',
+            parent_category VARCHAR(100) NOT NULL DEFAULT 'A) Customs Clearance',
+            child_category VARCHAR(100) NOT NULL DEFAULT 'New Fixed Asset (FA)',
+            boe_number VARCHAR(50) UNIQUE,
+            equipment_type ENUM('TEU20', 'FEU40', 'LCL_SEA', 'LCL_AIR', 'ROAD', 'DOCUMENT') NOT NULL DEFAULT 'TEU20',
+            unit_type ENUM('PER_TEU', 'PER_TEU_BOE', 'PER_FEU', 'PER_FEU_BOE', 'PER_VEHICLE', 'PER_VEHICLE_BOE', 'PER_DOCUMENT') NOT NULL DEFAULT 'PER_TEU',
             shipment_type ENUM('Inbound', 'Outbound') NOT NULL,
             shipment_subtype VARCHAR(100) NOT NULL,
             asc_number VARCHAR(100),
@@ -121,6 +128,9 @@ function createBasicTables() {
             height DECIMAL(10,2) CHECK (height > 0),
             packages INT CHECK (packages > 0),
             weight DECIMAL(10,2),
+            cargo_type ENUM('Fixed assets', 'Chemicals', 'Spares') NOT NULL,
+            haz_selection ENUM('Yes', 'No') NOT NULL DEFAULT 'No',
+            old_new_selection ENUM('Old', 'New') NOT NULL DEFAULT 'New',
             status ENUM('draft', 'in_progress', 'completed', 'cancelled') DEFAULT 'draft',
             notes TEXT,
             created_by INT NOT NULL,
@@ -179,6 +189,69 @@ function createBasicTables() {
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY (invoice_id) REFERENCES invoices(id) ON DELETE CASCADE
         );
+        
+        CREATE TABLE IF NOT EXISTS billing_master (
+            id INT PRIMARY KEY AUTO_INCREMENT,
+            direction ENUM('Inbound', 'Outbound') NOT NULL,
+            parent_category VARCHAR(100) NOT NULL,
+            child_category VARCHAR(100) NOT NULL,
+            equipment_type ENUM('TEU20', 'FEU40', 'LCL_SEA', 'LCL_AIR', 'ROAD', 'DOCUMENT') NOT NULL,
+            unit_type ENUM('PER_TEU', 'PER_TEU_BOE', 'PER_FEU', 'PER_FEU_BOE', 'PER_VEHICLE', 'PER_VEHICLE_BOE', 'PER_DOCUMENT') NOT NULL,
+            currency ENUM('INR', 'USD') NOT NULL,
+            price DECIMAL(15,2) NOT NULL DEFAULT 0.00,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+            UNIQUE KEY unique_billing_line (direction, parent_category, child_category, equipment_type, unit_type, currency)
+        );
+        
+        CREATE TABLE IF NOT EXISTS billing_combinations (
+            id INT PRIMARY KEY AUTO_INCREMENT,
+            master_id INT NOT NULL,
+            customer_id INT NOT NULL,
+            price_override DECIMAL(15,2) NOT NULL DEFAULT 0.00,
+            is_custom TINYINT(1) NOT NULL DEFAULT 0,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+            FOREIGN KEY (master_id) REFERENCES billing_master(id) ON DELETE RESTRICT,
+            FOREIGN KEY (customer_id) REFERENCES customers(id) ON DELETE RESTRICT,
+            UNIQUE KEY unique_combination (master_id, customer_id, is_custom)
+        );
+        
+        CREATE TABLE IF NOT EXISTS draft_invoices (
+            id INT PRIMARY KEY AUTO_INCREMENT,
+            shipment_id INT NOT NULL,
+            customer_id INT NOT NULL,
+            subtotal DECIMAL(15,2) NOT NULL DEFAULT 0.00,
+            status ENUM('draft', 'pending') NOT NULL DEFAULT 'draft',
+            created_by INT NOT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+            FOREIGN KEY (shipment_id) REFERENCES shipments(id) ON DELETE RESTRICT,
+            FOREIGN KEY (customer_id) REFERENCES customers(id) ON DELETE RESTRICT,
+            FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE RESTRICT,
+            UNIQUE KEY unique_active_draft (shipment_id, status)
+        );
+        
+        CREATE TABLE IF NOT EXISTS draft_invoice_items (
+            id INT PRIMARY KEY AUTO_INCREMENT,
+            draft_invoice_id INT NOT NULL,
+            description TEXT NOT NULL,
+            uom VARCHAR(50) NOT NULL,
+            quantity DECIMAL(10,2) NOT NULL DEFAULT 1.00,
+            rate DECIMAL(15,2) NOT NULL DEFAULT 0.00,
+            currency ENUM('USD', 'INR') NOT NULL,
+            fx_rate DECIMAL(10,2) NOT NULL DEFAULT 81.90,
+            amount_usd DECIMAL(15,2) NOT NULL DEFAULT 0.00,
+            amount_inr DECIMAL(15,2) NOT NULL DEFAULT 0.00,
+            hsn_sac VARCHAR(20),
+            igst_percent DECIMAL(5,2) NOT NULL DEFAULT 18.00,
+            igst_amount_usd DECIMAL(15,2) NOT NULL DEFAULT 0.00,
+            igst_amount_inr DECIMAL(15,2) NOT NULL DEFAULT 0.00,
+            billing_master_id INT,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (draft_invoice_id) REFERENCES draft_invoices(id) ON DELETE CASCADE,
+            FOREIGN KEY (billing_master_id) REFERENCES billing_master(id) ON DELETE SET NULL
+        );
     `;
     
     const statements = createTablesSQL.split(';').filter(stmt => stmt.trim());
@@ -193,7 +266,11 @@ function createBasicTables() {
                     completed++;
                     if (completed === statements.length) {
                         console.log('Basic tables created successfully');
-                        insertSampleData();
+                        ensureMigrationsAndProcedures(() => {
+                            insertSLBBillingData(() => {
+                                insertSampleData();
+                            });
+                        });
                     }
                 }
             });
@@ -216,6 +293,271 @@ function checkAdminUser() {
             console.log('Admin user already exists');
             console.log('Default user: admin@123.com / admin');
         }
+    });
+}
+
+// Run simple migrations and create stored procedures for upsert behavior
+function ensureMigrationsAndProcedures(done) {
+    const alterSql = `
+        ALTER TABLE users 
+            MODIFY name VARCHAR(255) NOT NULL,
+            MODIFY email VARCHAR(255) NOT NULL,
+            MODIFY password VARCHAR(255) NOT NULL;
+        ALTER TABLE customers 
+            MODIFY company_name VARCHAR(255) NOT NULL;
+        ALTER TABLE shipments 
+            MODIFY shipment_type ENUM('Inbound','Outbound') NOT NULL,
+            MODIFY shipment_subtype VARCHAR(100) NOT NULL,
+            MODIFY customer_id INT NOT NULL,
+            MODIFY cbm DECIMAL(10,2) NOT NULL,
+            MODIFY created_by INT NOT NULL;
+        ALTER TABLE invoices 
+            MODIFY invoice_number VARCHAR(50) NOT NULL,
+            MODIFY shipment_id INT NOT NULL,
+            MODIFY customer_id INT NOT NULL,
+            MODIFY invoice_date DATE NOT NULL,
+            MODIFY due_date DATE NOT NULL,
+            MODIFY place_of_supply VARCHAR(255) NOT NULL,
+            MODIFY state VARCHAR(100) NOT NULL,
+            MODIFY state_code VARCHAR(10) NOT NULL,
+            MODIFY created_by INT NOT NULL;
+        ALTER TABLE invoice_items 
+            MODIFY description TEXT NOT NULL,
+            MODIFY uom VARCHAR(50) NOT NULL,
+            MODIFY quantity DECIMAL(10,2) NOT NULL,
+            MODIFY rate DECIMAL(15,2) NOT NULL,
+            MODIFY currency ENUM('USD','INR') NOT NULL;`;
+
+    const procs = [
+        `DROP PROCEDURE IF EXISTS sp_upsert_customer;`,
+        `CREATE PROCEDURE sp_upsert_customer(
+            IN p_id INT,
+            IN p_company_name VARCHAR(255), IN p_gstin VARCHAR(15), IN p_boe VARCHAR(50), IN p_new_ton VARCHAR(50),
+            IN p_address TEXT, IN p_contact_person VARCHAR(255), IN p_phone VARCHAR(20), IN p_email VARCHAR(255),
+            IN p_state_code VARCHAR(10), IN p_state_name VARCHAR(100)
+        )
+        BEGIN
+            IF p_id IS NOT NULL AND EXISTS(SELECT 1 FROM customers WHERE id = p_id) THEN
+                UPDATE customers SET company_name=p_company_name, gstin=p_gstin, boe=p_boe, new_ton=p_new_ton,
+                    address=p_address, contact_person=p_contact_person, phone=p_phone, email=p_email,
+                    state_code=p_state_code, state_name=p_state_name, updated_at=CURRENT_TIMESTAMP
+                WHERE id=p_id;
+                SELECT p_id AS id;
+            ELSE
+                INSERT INTO customers (company_name, gstin, boe, new_ton, address, contact_person, phone, email, state_code, state_name)
+                VALUES (p_company_name, p_gstin, p_boe, p_new_ton, p_address, p_contact_person, p_phone, p_email, p_state_code, p_state_name);
+                SELECT LAST_INSERT_ID() AS id;
+            END IF;
+        END` ,
+        `DROP PROCEDURE IF EXISTS sp_upsert_shipment;` ,
+        `CREATE PROCEDURE sp_upsert_shipment(
+            IN p_id INT,
+            IN p_shipment_type ENUM('Inbound','Outbound'), IN p_shipment_subtype VARCHAR(100),
+            IN p_asc_number VARCHAR(100), IN p_sh_number VARCHAR(100), IN p_ref_number VARCHAR(100),
+            IN p_customer_id INT, IN p_cbm DECIMAL(10,2), IN p_odc ENUM('Yes','No'),
+            IN p_cargo_type ENUM('Fixed assets','Chemicals','Spares'), IN p_haz_selection ENUM('Yes','No'), IN p_old_new_selection ENUM('Old','New'),
+            IN p_length DECIMAL(10,2), IN p_breadth DECIMAL(10,2), IN p_height DECIMAL(10,2), IN p_packages INT,
+            IN p_created_by INT
+        )
+        BEGIN
+            IF p_id IS NOT NULL AND EXISTS(SELECT 1 FROM shipments WHERE id = p_id) THEN
+                UPDATE shipments SET shipment_type=p_shipment_type, shipment_subtype=p_shipment_subtype,
+                    asc_number=p_asc_number, sh_number=p_sh_number, ref_number=p_ref_number,
+                    customer_id=p_customer_id, cbm=p_cbm, odc=p_odc, cargo_type=p_cargo_type, haz_selection=p_haz_selection, old_new_selection=p_old_new_selection,
+                    length=p_length, breadth=p_breadth, height=p_height, packages=p_packages, updated_at=CURRENT_TIMESTAMP
+                WHERE id=p_id;
+                SELECT p_id AS id;
+            ELSE
+                INSERT INTO shipments (shipment_type, shipment_subtype, asc_number, sh_number, ref_number, customer_id, cbm, odc, cargo_type, haz_selection, old_new_selection, length, breadth, height, packages, created_by)
+                VALUES (p_shipment_type, p_shipment_subtype, p_asc_number, p_sh_number, p_ref_number, p_customer_id, p_cbm, p_odc, p_cargo_type, p_haz_selection, p_old_new_selection, p_length, p_breadth, p_height, p_packages, p_created_by);
+                SELECT LAST_INSERT_ID() AS id;
+            END IF;
+        END` ,
+        `DROP PROCEDURE IF EXISTS sp_upsert_invoice;` ,
+        `CREATE PROCEDURE sp_upsert_invoice(
+            IN p_id INT,
+            IN p_invoice_number VARCHAR(50), IN p_shipment_id INT, IN p_customer_id INT,
+            IN p_invoice_date DATE, IN p_due_date DATE,
+            IN p_place_of_supply VARCHAR(255), IN p_gstin_recipient VARCHAR(15), IN p_state VARCHAR(100), IN p_state_code VARCHAR(10),
+            IN p_po_reference VARCHAR(100), IN p_slb_reference VARCHAR(100), IN p_reverse_charge ENUM('Yes','No'),
+            IN p_subtotal_usd DECIMAL(15,2), IN p_subtotal_inr DECIMAL(15,2), IN p_igst_amount_usd DECIMAL(15,2), IN p_igst_amount_inr DECIMAL(15,2),
+            IN p_total_usd DECIMAL(15,2), IN p_total_inr DECIMAL(15,2), IN p_fx_rate DECIMAL(10,2), IN p_status ENUM('draft','finalized','cancelled'), IN p_created_by INT
+        )
+        BEGIN
+            IF p_id IS NOT NULL AND EXISTS(SELECT 1 FROM invoices WHERE id = p_id) THEN
+                UPDATE invoices SET invoice_number=p_invoice_number, shipment_id=p_shipment_id, customer_id=p_customer_id,
+                    invoice_date=p_invoice_date, due_date=p_due_date, place_of_supply=p_place_of_supply, gstin_recipient=p_gstin_recipient,
+                    state=p_state, state_code=p_state_code, po_reference=p_po_reference, slb_reference=p_slb_reference, reverse_charge=p_reverse_charge,
+                    subtotal_usd=p_subtotal_usd, subtotal_inr=p_subtotal_inr, igst_amount_usd=p_igst_amount_usd, igst_amount_inr=p_igst_amount_inr,
+                    total_usd=p_total_usd, total_inr=p_total_inr, fx_rate=p_fx_rate, status=p_status, updated_at=CURRENT_TIMESTAMP
+                WHERE id=p_id;
+                SELECT p_id AS id;
+            ELSE
+                INSERT INTO invoices (
+                    invoice_number, shipment_id, customer_id, invoice_date, due_date, place_of_supply, gstin_recipient, state, state_code,
+                    po_reference, slb_reference, reverse_charge, subtotal_usd, subtotal_inr, igst_amount_usd, igst_amount_inr,
+                    total_usd, total_inr, fx_rate, status, created_by)
+                VALUES (
+                    p_invoice_number, p_shipment_id, p_customer_id, p_invoice_date, p_due_date, p_place_of_supply, p_gstin_recipient, p_state, p_state_code,
+                    p_po_reference, p_slb_reference, p_reverse_charge, p_subtotal_usd, p_subtotal_inr, p_igst_amount_usd, p_igst_amount_inr,
+                    p_total_usd, p_total_inr, p_fx_rate, p_status, p_created_by);
+                SELECT LAST_INSERT_ID AS id;
+            END IF;
+        END` ,
+        `DROP PROCEDURE IF EXISTS sp_upsert_invoice_item;` ,
+        `CREATE PROCEDURE sp_upsert_invoice_item(
+            IN p_id INT,
+            IN p_invoice_id INT, IN p_description TEXT, IN p_uom VARCHAR(50), IN p_quantity DECIMAL(10,2), IN p_rate DECIMAL(15,2),
+            IN p_currency ENUM('USD','INR'), IN p_fx_rate DECIMAL(10,2), IN p_amount_usd DECIMAL(15,2), IN p_amount_inr DECIMAL(15,2),
+            IN p_hsn_sac VARCHAR(20), IN p_igst_percent DECIMAL(5,2), IN p_igst_amount_usd DECIMAL(15,2), IN p_igst_amount_inr DECIMAL(15,2)
+        )
+        BEGIN
+            IF p_id IS NOT NULL AND EXISTS(SELECT 1 FROM invoice_items WHERE id = p_id) THEN
+                UPDATE invoice_items SET invoice_id=p_invoice_id, description=p_description, uom=p_uom, quantity=p_quantity, rate=p_rate,
+                    currency=p_currency, fx_rate=p_fx_rate, amount_usd=p_amount_usd, amount_inr=p_amount_inr, hsn_sac=p_hsn_sac,
+                    igst_percent=p_igst_percent, igst_amount_usd=p_igst_amount_usd, igst_amount_inr=p_igst_amount_inr
+                WHERE id=p_id;
+                SELECT p_id AS id;
+            ELSE
+                INSERT INTO invoice_items (
+                    invoice_id, description, uom, quantity, rate, currency, fx_rate, amount_usd, amount_inr, hsn_sac, igst_percent, igst_amount_usd, igst_amount_inr)
+                VALUES (
+                    p_invoice_id, p_description, p_uom, p_quantity, p_rate, p_currency, p_fx_rate, p_amount_usd, p_amount_inr, p_hsn_sac, p_igst_percent, p_igst_amount_usd, p_igst_amount_inr);
+                SELECT LAST_INSERT_ID() AS id;
+            END IF;
+        END`
+    ];
+
+    // Execute ALTERs first
+    db.query(alterSql, (err) => {
+        if (err) {
+            console.error('Migration error:', err.message);
+        } else {
+            console.log('Migrations applied');
+        }
+
+        // Create procedures sequentially to avoid delimiter issues
+        const execNext = (idx) => {
+            if (idx >= procs.length) {
+                if (typeof done === 'function') done();
+                return;
+            }
+            db.query(procs[idx], (perr) => {
+                if (perr && !(`${perr.code}`.includes('ER_SP_ALREADY_EXISTS'))) {
+                    console.error('Procedure error:', perr.message);
+                }
+                execNext(idx + 1);
+            });
+        };
+        execNext(0);
+    });
+}
+
+// Function to insert SLB billing master data
+function insertSLBBillingData(done) {
+    console.log('Inserting SLB billing master data...');
+    
+    const slbData = [
+        // INBOUND SECTION
+        // A) Customs Clearance
+        ['Inbound', 'A) Customs Clearance', 'New Fixed Asset (FA)', 'TEU20', 'PER_TEU', 'INR', 1500.00],
+        ['Inbound', 'A) Customs Clearance', 'New Fixed Asset (FA)', 'TEU20', 'PER_TEU_BOE', 'INR', 1800.00],
+        ['Inbound', 'A) Customs Clearance', 'New Fixed Asset (FA)', 'FEU40', 'PER_FEU', 'INR', 2500.00],
+        ['Inbound', 'A) Customs Clearance', 'New Fixed Asset (FA)', 'FEU40', 'PER_FEU_BOE', 'INR', 2800.00],
+        ['Inbound', 'A) Customs Clearance', 'New Fixed Asset (FA)', 'LCL_SEA', 'PER_VEHICLE', 'INR', 800.00],
+        ['Inbound', 'A) Customs Clearance', 'New Fixed Asset (FA)', 'LCL_AIR', 'PER_VEHICLE', 'INR', 1200.00],
+        ['Inbound', 'A) Customs Clearance', 'New Fixed Asset (FA)', 'ROAD', 'PER_VEHICLE', 'INR', 600.00],
+
+        ['Inbound', 'A) Customs Clearance', 'Machinery & Spares (M&S)', 'TEU20', 'PER_TEU', 'INR', 1200.00],
+        ['Inbound', 'A) Customs Clearance', 'Machinery & Spares (M&S)', 'FEU40', 'PER_FEU', 'INR', 2000.00],
+        ['Inbound', 'A) Customs Clearance', 'Machinery & Spares (M&S)', 'LCL_SEA', 'PER_VEHICLE', 'INR', 700.00],
+
+        ['Inbound', 'A) Customs Clearance', 'Chemicals (DG/Non-DG)', 'TEU20', 'PER_TEU', 'INR', 1800.00],
+        ['Inbound', 'A) Customs Clearance', 'Chemicals (DG/Non-DG)', 'FEU40', 'PER_FEU', 'INR', 3000.00],
+        ['Inbound', 'A) Customs Clearance', 'Chemicals (DG/Non-DG)', 'LCL_SEA', 'PER_VEHICLE', 'INR', 1000.00],
+
+        ['Inbound', 'A) Customs Clearance', 'Old & Used', 'TEU20', 'PER_TEU', 'INR', 1000.00],
+        ['Inbound', 'A) Customs Clearance', 'Old & Used', 'FEU40', 'PER_FEU', 'INR', 1800.00],
+        ['Inbound', 'A) Customs Clearance', 'Old & Used', 'LCL_SEA', 'PER_VEHICLE', 'INR', 500.00],
+
+        // B) CE Certification
+        ['Inbound', 'B) CE Certification', 'Document', 'DOCUMENT', 'PER_DOCUMENT', 'INR', 500.00],
+
+        // C) Inbound Transportation
+        ['Inbound', 'C) Inbound Transportation', 'New Fixed Asset (FA)', 'TEU20', 'PER_TEU', 'INR', 800.00],
+        ['Inbound', 'C) Inbound Transportation', 'New Fixed Asset (FA)', 'FEU40', 'PER_FEU', 'INR', 1200.00],
+        ['Inbound', 'C) Inbound Transportation', 'New Fixed Asset (FA)', 'LCL_SEA', 'PER_VEHICLE', 'INR', 400.00],
+        ['Inbound', 'C) Inbound Transportation', 'New Fixed Asset (FA)', 'LCL_AIR', 'PER_VEHICLE', 'INR', 600.00],
+        ['Inbound', 'C) Inbound Transportation', 'New Fixed Asset (FA)', 'ROAD', 'PER_VEHICLE', 'INR', 300.00],
+
+        // D) Handling
+        ['Inbound', 'D) Handling', 'New Fixed Asset (FA)', 'TEU20', 'PER_TEU', 'INR', 600.00],
+        ['Inbound', 'D) Handling', 'New Fixed Asset (FA)', 'FEU40', 'PER_FEU', 'INR', 900.00],
+        ['Inbound', 'D) Handling', 'New Fixed Asset (FA)', 'LCL_SEA', 'PER_VEHICLE', 'INR', 300.00],
+        ['Inbound', 'D) Handling', 'New Fixed Asset (FA)', 'LCL_AIR', 'PER_VEHICLE', 'INR', 450.00],
+        ['Inbound', 'D) Handling', 'New Fixed Asset (FA)', 'ROAD', 'PER_VEHICLE', 'INR', 200.00],
+
+        // E) Documentation
+        ['Inbound', 'E) Documentation', 'Document', 'DOCUMENT', 'PER_DOCUMENT', 'INR', 300.00],
+
+        // F) Container Scanning
+        ['Inbound', 'F) Container Scanning', 'New Fixed Asset (FA)', 'TEU20', 'PER_TEU', 'INR', 400.00],
+        ['Inbound', 'F) Container Scanning', 'New Fixed Asset (FA)', 'FEU40', 'PER_FEU', 'INR', 600.00],
+        ['Inbound', 'F) Container Scanning', 'New Fixed Asset (FA)', 'LCL_SEA', 'PER_VEHICLE', 'INR', 200.00],
+        ['Inbound', 'F) Container Scanning', 'New Fixed Asset (FA)', 'LCL_AIR', 'PER_VEHICLE', 'INR', 300.00],
+        ['Inbound', 'F) Container Scanning', 'New Fixed Asset (FA)', 'ROAD', 'PER_VEHICLE', 'INR', 150.00],
+
+        // OUTBOUND SECTION
+        // G) Customs Clearance
+        ['Outbound', 'G) Customs Clearance', 'New Fixed Asset (FA)', 'TEU20', 'PER_TEU', 'INR', 1400.00],
+        ['Outbound', 'G) Customs Clearance', 'New Fixed Asset (FA)', 'FEU40', 'PER_FEU', 'INR', 2300.00],
+        ['Outbound', 'G) Customs Clearance', 'New Fixed Asset (FA)', 'LCL_SEA', 'PER_VEHICLE', 'INR', 750.00],
+        ['Outbound', 'G) Customs Clearance', 'New Fixed Asset (FA)', 'LCL_AIR', 'PER_VEHICLE', 'INR', 1100.00],
+        ['Outbound', 'G) Customs Clearance', 'New Fixed Asset (FA)', 'ROAD', 'PER_VEHICLE', 'INR', 550.00],
+
+        // H) CE Certification
+        ['Outbound', 'H) CE Certification', 'Document', 'DOCUMENT', 'PER_DOCUMENT', 'INR', 500.00],
+
+        // I) Handling
+        ['Outbound', 'I) Handling', 'New Fixed Asset (FA)', 'TEU20', 'PER_TEU', 'INR', 550.00],
+        ['Outbound', 'I) Handling', 'New Fixed Asset (FA)', 'FEU40', 'PER_FEU', 'INR', 850.00],
+        ['Outbound', 'I) Handling', 'New Fixed Asset (FA)', 'LCL_SEA', 'PER_VEHICLE', 'INR', 280.00],
+        ['Outbound', 'I) Handling', 'New Fixed Asset (FA)', 'LCL_AIR', 'PER_VEHICLE', 'INR', 420.00],
+        ['Outbound', 'I) Handling', 'New Fixed Asset (FA)', 'ROAD', 'PER_VEHICLE', 'INR', 180.00],
+
+        // J) Documentation
+        ['Outbound', 'J) Documentation', 'Document', 'DOCUMENT', 'PER_DOCUMENT', 'INR', 300.00],
+
+        // K) Transportation
+        ['Outbound', 'K) Transportation', 'New Fixed Asset (FA)', 'TEU20', 'PER_TEU', 'INR', 750.00],
+        ['Outbound', 'K) Transportation', 'New Fixed Asset (FA)', 'FEU40', 'PER_FEU', 'INR', 1100.00],
+        ['Outbound', 'K) Transportation', 'New Fixed Asset (FA)', 'LCL_SEA', 'PER_VEHICLE', 'INR', 350.00],
+        ['Outbound', 'K) Transportation', 'New Fixed Asset (FA)', 'LCL_AIR', 'PER_VEHICLE', 'INR', 550.00],
+        ['Outbound', 'K) Transportation', 'New Fixed Asset (FA)', 'ROAD', 'PER_VEHICLE', 'INR', 250.00],
+
+        // L) Storage
+        ['Outbound', 'L) Storage', 'New Fixed Asset (FA)', 'TEU20', 'PER_TEU', 'INR', 400.00],
+        ['Outbound', 'L) Storage', 'New Fixed Asset (FA)', 'FEU40', 'PER_FEU', 'INR', 600.00],
+        ['Outbound', 'L) Storage', 'New Fixed Asset (FA)', 'LCL_SEA', 'PER_VEHICLE', 'INR', 200.00],
+        ['Outbound', 'L) Storage', 'New Fixed Asset (FA)', 'LCL_AIR', 'PER_VEHICLE', 'INR', 300.00],
+        ['Outbound', 'L) Storage', 'New Fixed Asset (FA)', 'ROAD', 'PER_VEHICLE', 'INR', 150.00]
+    ];
+
+    let inserted = 0;
+    slbData.forEach((row, index) => {
+        db.query(`INSERT IGNORE INTO billing_master (direction, parent_category, child_category, equipment_type, unit_type, currency, price) VALUES (?, ?, ?, ?, ?, ?, ?)`, 
+            row, (err) => {
+                if (err && !err.message.includes('Duplicate entry')) {
+                    console.error('Error inserting SLB data:', err);
+                } else {
+                    inserted++;
+                }
+                
+                if (inserted === slbData.length) {
+                    console.log('SLB billing master data inserted successfully');
+                    if (typeof done === 'function') done();
+                }
+            });
     });
 }
 
@@ -249,7 +591,7 @@ function insertSampleData() {
                     console.log(`User ${user[0]} created successfully`);
                 }
             });
-    });
+        });
     
     // Insert sample customers
     const sampleCustomers = [
@@ -321,6 +663,9 @@ function insertDefaultInvoice() {
                 customer_id: customerId,
                 cbm: 150.50,
                 odc: 'No',
+                cargo_type: 'Fixed assets',
+                haz_selection: 'No',
+                old_new_selection: 'New',
                 length: 10.5,
                 breadth: 8.2,
                 height: 6.8,
@@ -328,8 +673,8 @@ function insertDefaultInvoice() {
             };
             
             console.log('Inserting default shipment...');
-            db.query(`INSERT INTO shipments (shipment_type, shipment_subtype, asc_number, sh_number, ref_number, customer_id, cbm, odc, length, breadth, height, packages) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-                [shipmentData.shipment_type, shipmentData.shipment_subtype, shipmentData.asc_number, shipmentData.sh_number, shipmentData.ref_number, shipmentData.customer_id, shipmentData.cbm, shipmentData.odc, shipmentData.length, shipmentData.breadth, shipmentData.height, shipmentData.packages],
+            db.query(`INSERT INTO shipments (shipment_type, shipment_subtype, asc_number, sh_number, ref_number, customer_id, cbm, odc, cargo_type, haz_selection, old_new_selection, length, breadth, height, packages) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                [shipmentData.shipment_type, shipmentData.shipment_subtype, shipmentData.asc_number, shipmentData.sh_number, shipmentData.ref_number, shipmentData.customer_id, shipmentData.cbm, shipmentData.odc, shipmentData.cargo_type, shipmentData.haz_selection, shipmentData.old_new_selection, shipmentData.length, shipmentData.breadth, shipmentData.height, shipmentData.packages],
                 (err, result) => {
                     if (err) {
                         console.error('Error inserting default shipment:', err);
@@ -361,8 +706,20 @@ function insertDefaultInvoice() {
                     };
                     
                     console.log('Inserting default invoice...');
-                    db.query(`INSERT INTO invoices (invoice_number, invoice_date, shipment_id, customer_id, subtotal_usd, subtotal_inr, fx_rate, igst_percentage, igst_amount_usd, igst_amount_inr, total_amount_usd, total_amount_inr, status, place_of_supply, recipient_gstin, state, state_code) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-                        [invoiceData.invoice_number, invoiceData.invoice_date, invoiceData.shipment_id, invoiceData.customer_id, invoiceData.subtotal_usd, invoiceData.subtotal_inr, invoiceData.fx_rate, invoiceData.igst_percentage, invoiceData.igst_amount_usd, invoiceData.igst_amount_inr, invoiceData.total_amount_usd, invoiceData.total_amount_inr, invoiceData.status, invoiceData.place_of_supply, invoiceData.recipient_gstin, invoiceData.state, invoiceData.state_code],
+                    db.query(`INSERT INTO invoices (
+                            invoice_number, shipment_id, customer_id, invoice_date, due_date,
+                            place_of_supply, gstin_recipient, state, state_code,
+                            po_reference, slb_reference, reverse_charge,
+                            subtotal_usd, subtotal_inr, igst_amount_usd, igst_amount_inr,
+                            total_usd, total_inr, fx_rate, status, created_by
+                        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                        [
+                            invoiceData.invoice_number, shipmentId, customerId, invoiceData.invoice_date, invoiceData.invoice_date,
+                            invoiceData.place_of_supply, invoiceData.recipient_gstin, invoiceData.state, invoiceData.state_code,
+                            'Contract', 'S-202919/REW', 'No',
+                            invoiceData.subtotal_usd, invoiceData.subtotal_inr, invoiceData.igst_amount_usd, invoiceData.igst_amount_inr,
+                            invoiceData.total_amount_usd, invoiceData.total_amount_inr, invoiceData.fx_rate, invoiceData.status, 1
+                        ],
                         (err, result) => {
                             if (err) {
                                 console.error('Error inserting default invoice:', err);
@@ -379,8 +736,12 @@ function insertDefaultInvoice() {
                             
                             console.log('Inserting default invoice items...');
                             invoiceItems.forEach(item => {
-                                db.query(`INSERT INTO invoice_items (invoice_id, description, uom, quantity, rate, currency, fx_rate, amount_usd, hsn_sac, igst_percentage, igst_amount_usd, igst_amount_inr) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-                                    [invoiceId, item[0], item[1], item[2], item[3], item[4], item[5], item[6], item[7], item[8], item[9], item[10]],
+                                const amountInr = item[6];
+                                db.query(`INSERT INTO invoice_items (
+                                            invoice_id, description, uom, quantity, rate, currency,
+                                            fx_rate, amount_usd, amount_inr, hsn_sac, igst_percent, igst_amount_usd, igst_amount_inr
+                                        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                                    [invoiceId, item[0], item[1], item[2], item[3], item[4], item[5], item[6] / item[5], amountInr, item[7], item[8], item[9], item[10]],
                                     (err) => {
                                         if (err) {
                                             console.error('Error inserting invoice item:', err);
@@ -748,13 +1109,14 @@ app.get('/api/customers/:id', requireAuth, (req, res) => {
 // Create shipment API
 app.post('/api/shipments', (req, res) => {
     const {
+        direction, parent_category, child_category, boe_number, equipment_type, unit_type,
         shipment_type, shipment_subtype, asc_number, sh_number, ref_number, customer_id,
-        cbm, odc, length, breadth, height, packages
+        cbm, odc, cargo_type, haz_selection, old_new_selection, length, breadth, height, packages
     } = req.body;
 
     // Validate required fields
-    if (!shipment_type || !shipment_subtype || !customer_id || !cbm) {
-        return res.status(400).json({ error: 'Shipment type, subtype, customer, and CBM are required' });
+    if (!shipment_type || !shipment_subtype || !customer_id || !cbm || !cargo_type || !haz_selection || !old_new_selection) {
+        return res.status(400).json({ error: 'Shipment type, subtype, customer, CBM, cargo type, HAZ selection, and old/new selection are required' });
     }
 
     // Validate CBM is positive
@@ -769,13 +1131,16 @@ app.post('/api/shipments', (req, res) => {
     const packagesValue = packages && packages.trim() !== '' ? parseInt(packages) : null;
 
     const sql = `INSERT INTO shipments (
+        direction, parent_category, child_category, boe_number, equipment_type, unit_type,
         shipment_type, shipment_subtype, asc_number, sh_number, ref_number, customer_id,
-        cbm, odc, length, breadth, height, packages, created_by
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+        cbm, odc, cargo_type, haz_selection, old_new_selection, length, breadth, height, packages, created_by
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
 
     db.query(sql, [
+        direction || 'Inbound', parent_category || 'A) Customs Clearance', child_category || 'New Fixed Asset (FA)', 
+        boe_number, equipment_type || 'TEU20', unit_type || 'PER_TEU',
         shipment_type, shipment_subtype, asc_number, sh_number, ref_number, customer_id,
-        cbm, odc, lengthValue, breadthValue, heightValue, packagesValue, req.session.userId || 1
+        cbm, odc, cargo_type, haz_selection, old_new_selection, lengthValue, breadthValue, heightValue, packagesValue, req.session.userId || 1
     ], function(err, result) {
         if (err) {
             console.error('Shipment creation error:', err);
@@ -920,7 +1285,7 @@ app.get('/api/shipments', (req, res) => {
 app.get('/api/invoices', (req, res) => {
     db.query(`
         SELECT i.*, c.company_name, c.gstin, s.shipment_type, s.shipment_subtype, u.name as created_by_name
-        FROM invoices i
+        FROM invoices i 
         LEFT JOIN shipments s ON i.shipment_id = s.id
         LEFT JOIN customers c ON s.customer_id = c.id
         LEFT JOIN users u ON i.created_by = u.id
@@ -1036,6 +1401,172 @@ app.get('/api/invoices/:id/status', (req, res) => {
         res.json({
             success: true,
             invoice: results[0]
+        });
+    });
+});
+
+// Get SLB billing master data API
+app.get('/api/billing-master', (req, res) => {
+    const { direction, parent_category, child_category, equipment_type, unit_type, currency } = req.query;
+    
+    let sql = 'SELECT * FROM billing_master WHERE 1=1';
+    let params = [];
+    
+    if (direction) {
+        sql += ' AND direction = ?';
+        params.push(direction);
+    }
+    if (parent_category) {
+        sql += ' AND parent_category = ?';
+        params.push(parent_category);
+    }
+    if (child_category) {
+        sql += ' AND child_category = ?';
+        params.push(child_category);
+    }
+    if (equipment_type) {
+        sql += ' AND equipment_type = ?';
+        params.push(equipment_type);
+    }
+    if (unit_type) {
+        sql += ' AND unit_type = ?';
+        params.push(unit_type);
+    }
+    if (currency) {
+        sql += ' AND currency = ?';
+        params.push(currency);
+    }
+    
+    sql += ' ORDER BY direction, parent_category, child_category, equipment_type, unit_type, currency';
+    
+    db.query(sql, params, (err, results) => {
+        if (err) {
+            console.error('Error fetching billing master:', err);
+            return res.status(500).json({ error: 'Database error' });
+        }
+        res.json(results);
+    });
+});
+
+// Get SLB hierarchy options API
+app.get('/api/slb-options', (req, res) => {
+    const { level } = req.query;
+    
+    let sql, params = [];
+    
+    switch(level) {
+        case 'directions':
+            sql = 'SELECT DISTINCT direction FROM billing_master ORDER BY direction';
+            break;
+        case 'parent_categories':
+            sql = 'SELECT DISTINCT parent_category FROM billing_master WHERE direction = ? ORDER BY parent_category';
+            params = [req.query.direction];
+            break;
+        case 'child_categories':
+            sql = 'SELECT DISTINCT child_category FROM billing_master WHERE direction = ? AND parent_category = ? ORDER BY child_category';
+            params = [req.query.direction, req.query.parent_category];
+            break;
+        case 'equipment_types':
+            sql = 'SELECT DISTINCT equipment_type FROM billing_master WHERE direction = ? AND parent_category = ? AND child_category = ? ORDER BY equipment_type';
+            params = [req.query.direction, req.query.parent_category, req.query.child_category];
+            break;
+        case 'unit_types':
+            sql = 'SELECT DISTINCT unit_type FROM billing_master WHERE direction = ? AND parent_category = ? AND child_category = ? AND equipment_type = ? ORDER BY unit_type';
+            params = [req.query.direction, req.query.parent_category, req.query.child_category, req.query.equipment_type];
+            break;
+        case 'currencies':
+            sql = 'SELECT DISTINCT currency FROM billing_master WHERE direction = ? AND parent_category = ? AND child_category = ? AND equipment_type = ? AND unit_type = ? ORDER BY currency';
+            params = [req.query.direction, req.query.parent_category, req.query.child_category, req.query.equipment_type, req.query.unit_type];
+            break;
+        default:
+            return res.status(400).json({ error: 'Invalid level parameter' });
+    }
+    
+    db.query(sql, params, (err, results) => {
+        if (err) {
+            console.error('Error fetching SLB options:', err);
+            return res.status(500).json({ error: 'Database error' });
+        }
+        res.json(results);
+    });
+});
+
+// Get effective price API
+app.get('/api/effective-price', (req, res) => {
+    const { customer_id, direction, parent_category, child_category, equipment_type, unit_type, currency } = req.query;
+    
+    if (!customer_id || !direction || !parent_category || !child_category || !equipment_type || !unit_type || !currency) {
+        return res.status(400).json({ error: 'All parameters are required' });
+    }
+    
+    // First check for customer custom override
+    const customOverrideSql = `
+        SELECT bc.price_override 
+        FROM billing_combinations bc
+        JOIN billing_master bm ON bc.master_id = bm.id
+        WHERE bc.customer_id = ? AND bc.is_custom = 1
+        AND bm.direction = ? AND bm.parent_category = ? AND bm.child_category = ?
+        AND bm.equipment_type = ? AND bm.unit_type = ? AND bm.currency = ?
+    `;
+    
+    db.query(customOverrideSql, [customer_id, direction, parent_category, child_category, equipment_type, unit_type, currency], (err, customResults) => {
+        if (err) {
+            console.error('Error fetching custom override:', err);
+            return res.status(500).json({ error: 'Database error' });
+        }
+        
+        if (customResults.length > 0) {
+            return res.json({ 
+                price: customResults[0].price_override, 
+                source: 'custom_override' 
+            });
+        }
+        
+        // Check for predefined combination
+        const predefinedSql = `
+            SELECT bc.price_override 
+            FROM billing_combinations bc
+            JOIN billing_master bm ON bc.master_id = bm.id
+            WHERE bc.customer_id = ? AND bc.is_custom = 0
+            AND bm.direction = ? AND bm.parent_category = ? AND bm.child_category = ?
+            AND bm.equipment_type = ? AND bm.unit_type = ? AND bm.currency = ?
+        `;
+        
+        db.query(predefinedSql, [customer_id, direction, parent_category, child_category, equipment_type, unit_type, currency], (err, predefinedResults) => {
+            if (err) {
+                console.error('Error fetching predefined combination:', err);
+                return res.status(500).json({ error: 'Database error' });
+            }
+            
+            if (predefinedResults.length > 0) {
+                return res.json({ 
+                    price: predefinedResults[0].price_override, 
+                    source: 'predefined_combination' 
+                });
+            }
+            
+            // Fall back to master price
+            const masterSql = `
+                SELECT price FROM billing_master 
+                WHERE direction = ? AND parent_category = ? AND child_category = ?
+                AND equipment_type = ? AND unit_type = ? AND currency = ?
+            `;
+            
+            db.query(masterSql, [direction, parent_category, child_category, equipment_type, unit_type, currency], (err, masterResults) => {
+                if (err) {
+                    console.error('Error fetching master price:', err);
+                    return res.status(500).json({ error: 'Database error' });
+                }
+                
+                if (masterResults.length > 0) {
+                    return res.json({ 
+                        price: masterResults[0].price, 
+                        source: 'master_price' 
+                    });
+                } else {
+                    return res.status(404).json({ error: 'No pricing found for this combination' });
+                }
+            });
         });
     });
 });
